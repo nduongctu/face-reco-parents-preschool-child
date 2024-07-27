@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from passlib.context import CryptContext
@@ -43,6 +44,14 @@ class UserInDB(BaseModel):
 
 # Tạo đối tượng FastAPI
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Đối tượng để quản lý mật khẩu
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -108,7 +117,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     existing_user = get_user(db, form_data.username)
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        raise HTTPException(status_code=400, detail="Username đã tồn tại")
 
     hashed_password = get_password_hash(form_data.password)
     new_user = User(
@@ -134,7 +143,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Sai username hoặc password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -155,7 +164,7 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 async def admin_only(current_user: User = Depends(get_current_user)):
     if current_user.role != 0:  # Kiểm tra xem role có phải là ADMIN (0) không
         raise HTTPException(status_code=403, detail="Access forbidden")
-    return {"message": "Welcome, Admin!"}
+    return {"message": "Chào mừng, Admin!"}
 
 # Chạy ứng dụng FastAPI
 if __name__ == "__main__":
