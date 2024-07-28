@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import redis
 from pydantic import BaseModel
 from config import settings
+from redlock import Redlock
 
 # Tạo engine để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -18,29 +19,38 @@ Base = declarative_base()
 # Cấu hình Redis client
 redis_client = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
 
+# Cấu hình Redlock client
+redlock = Redlock([{"host": settings.REDIS_HOST, "port": settings.REDIS_PORT, "db": settings.REDIS_DB}])
+
+
 # Định nghĩa mô hình User cho cơ sở dữ liệu
 class User(Base):
     __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)  # Khóa chính của bảng
-    username = Column(String(50), unique=True, index=True)  # Tên người dùng, phải là duy nhất
-    hashed_password = Column(String(100))  # Mật khẩu đã được băm
-    role = Column(Integer, default=1)  # Vai trò người dùng (0: admin, 1: user), mặc định là 1
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True)
+    hashed_password = Column(String(100))
+    role = Column(Integer, default=1)
+
 
 # Tạo bảng trong cơ sở dữ liệu
 Base.metadata.create_all(bind=engine)
+
 
 # Định nghĩa các mô hình dữ liệu cho FastAPI
 class Token(BaseModel):
     access_token: str
     token_type: str
 
+
 class TokenData(BaseModel):
     username: str | None = None
     role: int | None = None
 
+
 class UserInDB(BaseModel):
     username: str
-    role: int  # Vai trò của người dùng
+    role: int
+
 
 # Tạo đối tượng FastAPI
 app = FastAPI()
@@ -57,6 +67,7 @@ app.add_middleware(
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 # Dependency để cung cấp kết nối với cơ sở dữ liệu
 def get_db():
     db = SessionLocal()
@@ -65,17 +76,21 @@ def get_db():
     finally:
         db.close()
 
+
 # Hàm kiểm tra mật khẩu
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 # Hàm băm mật khẩu
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+
 # Hàm lấy người dùng từ cơ sở dữ liệu
 def get_user(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
+
 
 # Hàm xác thực người dùng
 def authenticate_user(db: Session, username: str, password: str):
@@ -84,13 +99,15 @@ def authenticate_user(db: Session, username: str, password: str):
         return False
     return user
 
+
 # Hàm tạo token truy cập
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))  # Thời gian hết hạn của token
-    to_encode.update({"exp": expire})  # Thêm thời gian hết hạn vào payload
+    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=15))
+    to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
+
 
 # Dependency để lấy thông tin người dùng hiện tại từ token
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
@@ -112,29 +129,38 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
+
 # Endpoint đăng ký người dùng mới
 @app.post("/register", response_model=Token)
 def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    existing_user = get_user(db, form_data.username)
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Username đã tồn tại")
+    lock = redlock.lock("register_lock", 1000)
+    if not lock:
+        raise HTTPException(status_code=429, detail="Too many requests, please try again later.")
 
-    hashed_password = get_password_hash(form_data.password)
-    new_user = User(
-        username=form_data.username,
-        hashed_password=hashed_password
-    )
+    try:
+        existing_user = get_user(db, form_data.username)
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Username đã tồn tại")
 
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+        hashed_password = get_password_hash(form_data.password)
+        new_user = User(
+            username=form_data.username,
+            hashed_password=hashed_password
+        )
 
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": new_user.username, "role": new_user.role},  # Truyền giá trị số nguyên của role
-        expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": new_user.username, "role": new_user.role},
+            expires_delta=access_token_expires
+        )
+        return {"access_token": access_token, "token_type": "bearer"}
+    finally:
+        redlock.unlock(lock)
+
 
 # Endpoint đăng nhập và lấy token
 @app.post("/token", response_model=Token)
@@ -148,25 +174,27 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.username, "role": user.role},  # Truyền giá trị số nguyên của role
+        data={"sub": user.username, "role": user.role},
         expires_delta=access_token_expires
     )
     redis_client.setex(user.username, int(access_token_expires.total_seconds()), access_token)
     return {"access_token": access_token, "token_type": "bearer"}
 
+
 # Endpoint lấy thông tin người dùng hiện tại
 @app.get("/users/me", response_model=UserInDB)
 async def read_users_me(current_user: User = Depends(get_current_user)):
-    return UserInDB(username=current_user.username, role=current_user.role)  # Trả về giá trị số nguyên của role
+    return UserInDB(username=current_user.username, role=current_user.role)
+
 
 # Endpoint chỉ dành cho admin
 @app.get("/admin")
 async def admin_only(current_user: User = Depends(get_current_user)):
-    if current_user.role != 0:  # Kiểm tra xem role có phải là ADMIN (0) không
+    if current_user.role != 0:
         raise HTTPException(status_code=403, detail="Access forbidden")
     return {"message": "Chào mừng, Admin!"}
 
-# Chạy ứng dụng FastAPI
+
 if __name__ == "__main__":
     import uvicorn
 
