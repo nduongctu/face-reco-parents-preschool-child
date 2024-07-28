@@ -7,9 +7,9 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 import redis
+from redlock import Redlock
 from pydantic import BaseModel
 from config import settings
-from redlock import Redlock
 
 # Tạo engine để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -135,7 +135,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     lock = redlock.lock("register_lock", 1000)
     if not lock:
-        raise HTTPException(status_code=429, detail="Too many requests, please try again later.")
+        raise HTTPException(status_code=429, detail="Yêu cầu quá nhiều lần! Vui lòng thử lại sau.")
 
     try:
         existing_user = get_user(db, form_data.username)
@@ -165,20 +165,27 @@ def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Dep
 # Endpoint đăng nhập và lấy token
 @app.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sai username hoặc password",
-            headers={"WWW-Authenticate": "Bearer"},
+    lock = redlock.lock(f"login_lock_{form_data.username}", 1000)
+    if not lock:
+        raise HTTPException(status_code=429, detail="Yêu cầu quá nhiều lần! Vui lòng thử lại sau.")
+
+    try:
+        user = authenticate_user(db, form_data.username, form_data.password)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sai username hoặc password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.username, "role": user.role},
+            expires_delta=access_token_expires
         )
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username, "role": user.role},
-        expires_delta=access_token_expires
-    )
-    redis_client.setex(user.username, int(access_token_expires.total_seconds()), access_token)
-    return {"access_token": access_token, "token_type": "bearer"}
+        redis_client.setex(user.username, int(access_token_expires.total_seconds()), access_token)
+        return {"access_token": access_token, "token_type": "bearer"}
+    finally:
+        redlock.unlock(lock)
 
 
 # Endpoint lấy thông tin người dùng hiện tại
@@ -195,6 +202,7 @@ async def admin_only(current_user: User = Depends(get_current_user)):
     return {"message": "Chào mừng, Admin!"}
 
 
+# Chạy ứng dụng FastAPI
 if __name__ == "__main__":
     import uvicorn
 
