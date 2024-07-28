@@ -10,6 +10,7 @@ import redis
 from redlock import Redlock
 from pydantic import BaseModel
 from config import settings
+from middleware import TokenExpiryMiddleware
 
 # Tạo engine để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -62,6 +63,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(TokenExpiryMiddleware)  # Thêm middleware kiểm tra token hết hạn
 
 # Đối tượng để quản lý mật khẩu
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -186,6 +189,13 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         return {"access_token": access_token, "token_type": "bearer"}
     finally:
         redlock.unlock(lock)
+
+
+# Endpoint đăng xuất
+@app.post("/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    redis_client.delete(current_user.username)
+    return {"message": "Đăng xuất thành công"}
 
 
 # Endpoint lấy thông tin người dùng hiện tại
