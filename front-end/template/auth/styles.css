@@ -1,0 +1,144 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px; /* Tăng max-width để có thêm không gian */
+    background-color: #fff;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: row;
+}
+
+.login-box {
+    display: flex;
+    width: 100%;
+}
+
+.login-form {
+    flex: 2; /* Giảm tỷ lệ của form đăng nhập */
+    padding: 60px;
+    background-color: #f67d3f;
+}
+
+.welcome-section {
+    flex: 3; /* Tăng tỷ lệ của phần chào mừng */
+    background-color: #ffffff;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 60px;
+    min-height: 600px;
+}
+
+h2 {
+    margin-bottom: 30px;
+    font-size: 32px;
+    color: #ffffff;
+    text-align: center; /* Căn giữa tiêu đề */
+    white-space: nowrap; /* Ngăn tiêu đề xuống dòng */
+}
+
+.input-group {
+    margin-bottom: 30px;
+}
+
+label {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 18px;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    font-size: 16px;
+}
+
+.sign-in-btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 8px;
+    color: #f67d3f;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 18px;
+    background-color: #ffffff;
+    transition: background-color 0.3s ease;
+}
+
+.sign-in-btn:hover {
+    background-color: #fdd8cc;
+}
+
+.welcome-section p {
+    margin-top: 20px;
+    font-size: 18px;
+    text-align: center;
+    white-space: nowrap; /* Ngăn văn bản xuống dòng */
+}
+
+.welcome-image {
+    max-width: 80%; /* Đảm bảo ảnh không quá lớn */
+    height: auto;
+    margin-top: 20px;
+}
+
+@media (max-width: 992px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .login-box {
+        flex-direction: column;
+    }
+
+    .login-form,
+    .welcome-section {
+        flex: 1;
+        padding: 40px;
+    }
+
+    .welcome-section {
+        min-height: auto;
+    }
+
+    h2 {
+        font-size: 28px;
+        white-space: normal; /* Cho phép xuống dòng trên mobile */
+    }
+
+    .welcome-section p {
+        white-space: normal; /* Cho phép xuống dòng trên mobile */
+    }
+
+    input[type="text"],
+    input[type="password"],
+    .sign-in-btn {
+        font-size: 16px;
+    }
+}
