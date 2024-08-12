@@ -30,8 +30,19 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             // Đăng nhập thành công
             localStorage.setItem('access_token', data.access_token);
-            alert('Đăng nhập thành công!');
-            window.location.href = '../index.html'; // Điều hướng đến trang chính sau khi đăng nhập
+
+            // Giải mã token để lấy thông tin vai trò
+            const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
+            const role = tokenPayload.role;
+
+            // Điều hướng dựa trên vai trò
+            if (role === 0) {
+                // Admin
+                window.location.href = '../admin.html'; // Điều hướng đến trang admin
+            } else {
+                // Người dùng thông thường
+                window.location.href = '../index.html'; // Điều hướng đến trang chính
+            }
         })
         .catch(error => {
             console.error('There was an error!', error);
