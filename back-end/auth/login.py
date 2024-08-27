@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import sessionmaker, Session, declarative_base
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date
+from sqlalchemy.orm import sessionmaker, Session, declarative_base, relationship
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
@@ -18,23 +18,50 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 # Cấu hình Redis client
-redis_client = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB)
+redis_client = redis.Redis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=settings.REDIS_DB,
+                           decode_responses=True)
 
 # Cấu hình Redlock client
 redlock = Redlock([{"host": settings.REDIS_HOST, "port": settings.REDIS_PORT, "db": settings.REDIS_DB}])
 
 
-# Định nghĩa mô hình User cho cơ sở dữ liệu
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(50), unique=True, index=True)
-    hashed_password = Column(String(100))
-    role = Column(Integer, default=1)
+# Định nghĩa mô hình TaiKhoan cho cơ sở dữ liệu
+class TaiKhoan(Base):
+    __tablename__ = "TaiKhoan"
+    id_taikhoan = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    taikhoan = Column(String(50), unique=True, index=True)
+    matkhau = Column(String(255))
+    quyen = Column(Integer)
+    id_gv = Column(Integer, ForeignKey('GiaoVien.id_gv'), nullable=True)
+    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), nullable=True)
+
+    # Relationships
+    giao_vien = relationship("GiaoVien", back_populates="tai_khoan", uselist=False)
+    hoc_sinh = relationship("HocSinh", back_populates="tai_khoan", uselist=False)
 
 
-# Tạo bảng trong cơ sở dữ liệu
-Base.metadata.create_all(bind=engine)
+class GiaoVien(Base):
+    __tablename__ = "GiaoVien"
+    id_gv = Column(Integer, primary_key=True, index=True)
+    ten_gv = Column(String(100), nullable=False)
+    gioitinh_gv = Column(String(5), nullable=False)
+    ngaysinh_gv = Column(Date, nullable=False)
+    diachi_gv = Column(String(200), nullable=False)
+    sdt_gv = Column(String(20), nullable=False)
+
+    # Relationships
+    tai_khoan = relationship("TaiKhoan", back_populates="giao_vien", uselist=False)
+
+
+class HocSinh(Base):
+    __tablename__ = "HocSinh"
+    id_hs = Column(Integer, primary_key=True, index=True)
+    ten_hs = Column(String(100), nullable=False)
+    gioitinh_hs = Column(String(5), nullable=False)
+    ngaysinh_hs = Column(Date, nullable=False)
+
+    # Relationships
+    tai_khoan = relationship("TaiKhoan", back_populates="hoc_sinh", uselist=False)
 
 
 # Định nghĩa các mô hình dữ liệu cho FastAPI
@@ -44,13 +71,15 @@ class Token(BaseModel):
 
 
 class TokenData(BaseModel):
-    username: str | None = None
-    role: int | None = None
+    taikhoan: str | None = None
+    quyen: int | None = None
 
 
 class UserInDB(BaseModel):
-    username: str
-    role: int
+    taikhoan: str
+    quyen: int
+    id_gv: int | None = None
+    id_hs: int | None = None
 
 
 # Tạo đối tượng FastAPI
@@ -91,14 +120,14 @@ def get_password_hash(password):
 
 
 # Hàm lấy người dùng từ cơ sở dữ liệu
-def get_user(db: Session, username: str):
-    return db.query(User).filter(User.username == username).first()
+def get_user(db: Session, taikhoan: str):
+    return db.query(TaiKhoan).filter(TaiKhoan.taikhoan == taikhoan).first()
 
 
 # Hàm xác thực người dùng
-def authenticate_user(db: Session, username: str, password: str):
-    user = get_user(db, username)
-    if not user or not verify_password(password, user.hashed_password):
+def authenticate_user(db: Session, taikhoan: str, password: str):
+    user = get_user(db, taikhoan)
+    if not user or not verify_password(password, user.matkhau):
         return False
     return user
 
@@ -121,48 +150,16 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        taikhoan: str = payload.get("sub")
+        if taikhoan is None:
             raise credentials_exception
-        token_data = TokenData(username=username, role=payload.get("role"))
+        token_data = TokenData(taikhoan=taikhoan, quyen=payload.get("quyen"))
     except JWTError:
         raise credentials_exception
-    user = get_user(db, username=token_data.username)
+    user = get_user(db, taikhoan=token_data.taikhoan)
     if user is None:
         raise credentials_exception
     return user
-
-
-# Endpoint đăng ký người dùng mới
-@app.post("/register", response_model=Token)
-def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    lock = redlock.lock("register_lock", 1000)
-    if not lock:
-        raise HTTPException(status_code=429, detail="Yêu cầu quá nhiều lần! Vui lòng thử lại sau.")
-
-    try:
-        existing_user = get_user(db, form_data.username)
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Username đã tồn tại")
-
-        hashed_password = get_password_hash(form_data.password)
-        new_user = User(
-            username=form_data.username,
-            hashed_password=hashed_password
-        )
-
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": new_user.username, "role": new_user.role},
-            expires_delta=access_token_expires
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
-    finally:
-        redlock.unlock(lock)
 
 
 # Endpoint đăng nhập và lấy token
@@ -177,15 +174,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sai username hoặc password",
+                detail="Sai tài khoản hoặc mật khẩu",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.username, "role": user.role},
+            data={"sub": user.taikhoan, "quyen": user.quyen},
             expires_delta=access_token_expires
         )
-        redis_client.setex(user.username, int(access_token_expires.total_seconds()), access_token)
+        redis_client.setex(user.taikhoan, int(access_token_expires.total_seconds()), access_token)
         return {"access_token": access_token, "token_type": "bearer"}
     finally:
         redlock.unlock(lock)
@@ -193,23 +190,44 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
 # Endpoint đăng xuất
 @app.post("/logout")
-async def logout(current_user: User = Depends(get_current_user)):
-    redis_client.delete(current_user.username)
+async def logout(current_user: TaiKhoan = Depends(get_current_user)):
+    redis_client.delete(current_user.taikhoan)
     return {"message": "Đăng xuất thành công"}
 
 
 # Endpoint lấy thông tin người dùng hiện tại
 @app.get("/users/me", response_model=UserInDB)
-async def read_users_me(current_user: User = Depends(get_current_user)):
-    return UserInDB(username=current_user.username, role=current_user.role)
+async def read_users_me(current_user: TaiKhoan = Depends(get_current_user)):
+    return UserInDB(
+        taikhoan=current_user.taikhoan,
+        quyen=current_user.quyen,
+        id_gv=current_user.id_gv,
+        id_hs=current_user.id_hs
+    )
 
 
 # Endpoint chỉ dành cho admin
 @app.get("/admin")
-async def admin_only(current_user: User = Depends(get_current_user)):
-    if current_user.role != 0:
+async def admin_only(current_user: TaiKhoan = Depends(get_current_user)):
+    if current_user.quyen != 0:
         raise HTTPException(status_code=403, detail="Access forbidden")
     return {"message": "Chào mừng, Admin!"}
+
+
+# Endpoint chỉ dành cho giáo viên
+@app.get("/giaovien")
+async def giaovien_only(current_user: TaiKhoan = Depends(get_current_user)):
+    if current_user.quyen != 1:  # Chỉ cho phép giáo viên (quyen 1)
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    return {"message": "Chào mừng, Giáo viên!"}
+
+
+# Endpoint chỉ dành cho user (người dùng thông thường)
+@app.get("/user")
+async def user_only(current_user: TaiKhoan = Depends(get_current_user)):
+    if current_user.quyen != 2:  # Chỉ cho phép người dùng thông thường (quyen 2)
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    return {"message": "Chào mừng, User!"}
 
 
 # Chạy ứng dụng FastAPI
