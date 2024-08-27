@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const authForm = document.querySelector('.login-form form'); // Chọn form bên trong khung login-form
-    const baseURL = 'http://localhost:8000'; // Địa chỉ cơ sở của API
-    const endpoint = baseURL + '/token'; // Endpoint dành cho đăng nhập
+    const authForm = document.querySelector('.login-form form');
+    const baseURL = 'http://localhost:8000';
+    const endpoint = baseURL + '/token';
 
     authForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -28,28 +28,30 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            // Đăng nhập thành công
             localStorage.setItem('access_token', data.access_token);
 
-            // Giải mã token để lấy thông tin vai trò
-            const tokenPayload = JSON.parse(atob(data.access_token.split('.')[1]));
-            const role = tokenPayload.role;
+            try {
+                const tokenParts = data.access_token.split('.');
+                if (tokenParts.length !== 3) {
+                    throw new Error('Invalid token format.');
+                }
+                const payload = atob(tokenParts[1]);
+                const tokenPayload = JSON.parse(payload);
+                const role = tokenPayload.quyen;
 
-            // Điều hướng dựa trên vai trò
-            if (role === 0) {
-                // Admin
-                window.location.href = '../manage/admin.html'; // Điều hướng đến trang admin
-            } else if (role === 1) {
-                // Giáo viên
-                window.location.href = '../manage/giaovien.html'; // Điều hướng đến trang giáo viên
-            } else if (role === 2) {
-                // Người dùng thông thường
-                window.location.href = '../manage/user.html'; // Điều hướng đến trang user
-            } else {
-                // Vai trò không xác định
-                alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
+                if (role === 0) {
+                    window.location.href = '../manage/admin.html';
+                } else if (role === 1) {
+                    window.location.href = '../manage/giaovien.html';
+                } else if (role === 2) {
+                    window.location.href = '../manage/hocsinh.html';
+                } else {
+                    alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
+                }
+            } catch (error) {
+                console.error('Error decoding token!', error);
+                alert('Có lỗi xảy ra khi giải mã token.');
             }
-
         })
         .catch(error => {
             console.error('There was an error!', error);
