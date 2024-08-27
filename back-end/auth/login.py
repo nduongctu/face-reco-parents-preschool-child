@@ -132,39 +132,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
 
-
-# Endpoint đăng ký người dùng mới
-@app.post("/register", response_model=Token)
-def register(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    lock = redlock.lock("register_lock", 1000)
-    if not lock:
-        raise HTTPException(status_code=429, detail="Yêu cầu quá nhiều lần! Vui lòng thử lại sau.")
-
-    try:
-        existing_user = get_user(db, form_data.username)
-        if existing_user:
-            raise HTTPException(status_code=400, detail="Username đã tồn tại")
-
-        hashed_password = get_password_hash(form_data.password)
-        new_user = User(
-            username=form_data.username,
-            hashed_password=hashed_password
-        )
-
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = create_access_token(
-            data={"sub": new_user.username, "role": new_user.role},
-            expires_delta=access_token_expires
-        )
-        return {"access_token": access_token, "token_type": "bearer"}
-    finally:
-        redlock.unlock(lock)
-
-
 # Endpoint đăng nhập và lấy token
 @app.post("/token", response_model=Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -210,6 +177,22 @@ async def admin_only(current_user: User = Depends(get_current_user)):
     if current_user.role != 0:
         raise HTTPException(status_code=403, detail="Access forbidden")
     return {"message": "Chào mừng, Admin!"}
+
+
+# Endpoint chỉ dành cho giáo viên
+@app.get("/giaovien")
+async def giaovien_only(current_user: UserInDB = Depends(get_current_user)):
+    if current_user.role != 1:  # Chỉ cho phép giáo viên (role 1)
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    return {"message": "Chào mừng, Giáo viên!"}
+
+
+# Endpoint chỉ dành cho user (người dùng thông thường)
+@app.get("/user")
+async def user_only(current_user: UserInDB = Depends(get_current_user)):
+    if current_user.role != 2:  # Chỉ cho phép người dùng thông thường (role 2)
+        raise HTTPException(status_code=403, detail="Access forbidden")
+    return {"message": "Chào mừng, User!"}
 
 
 # Chạy ứng dụng FastAPI

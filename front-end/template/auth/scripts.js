@@ -38,11 +38,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // Điều hướng dựa trên vai trò
             if (role === 0) {
                 // Admin
-                window.location.href = '../admin.html'; // Điều hướng đến trang admin
-            } else {
+                window.location.href = '../manage/admin.html'; // Điều hướng đến trang admin
+            } else if (role === 1) {
+                // Giáo viên
+                window.location.href = '../manage/giaovien.html'; // Điều hướng đến trang giáo viên
+            } else if (role === 2) {
                 // Người dùng thông thường
-                window.location.href = '../index.html'; // Điều hướng đến trang chính
+                window.location.href = '../manage/user.html'; // Điều hướng đến trang user
+            } else {
+                // Vai trò không xác định
+                alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
             }
+
         })
         .catch(error => {
             console.error('There was an error!', error);

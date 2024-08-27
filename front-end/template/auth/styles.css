@@ -33,7 +33,7 @@ body {
 .login-form {
     flex: 2; /* Giảm tỷ lệ của form đăng nhập */
     padding: 60px;
-    background-color: #f67d3f;
+    background-color: #f38b20;
 }
 
 .welcome-section {
