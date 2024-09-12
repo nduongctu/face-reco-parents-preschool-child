@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const authForm = document.querySelector('.login-form form');
     const baseURL = 'http://localhost:8000';
-    const endpoint = baseURL + '/token';
+    const endpoint = baseURL + '/auth/login';
 
     authForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -40,11 +40,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const role = tokenPayload.quyen;
 
                 if (role === 0) {
-                    window.location.href = '../manage/admin.html';
+                    window.location.href = '../manage/admin/admin.html';
                 } else if (role === 1) {
-                    window.location.href = '../manage/giaovien.html';
+                    window.location.href = '../manage/giaovien/giaovien.html';
                 } else if (role === 2) {
-                    window.location.href = '../manage/hocsinh.html';
+                    window.location.href = '../manage/hocsinh/hocsinh.html';
                 } else {
                     alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
                 }
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .catch(error => {
-            console.error('There was an error!', error);
+            console.error('Đã xảy ra lỗi!', error);
             alert(error.message);
         });
     });

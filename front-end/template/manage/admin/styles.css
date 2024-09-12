@@ -1,0 +1,133 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fc;
+    display: flex;
+    overflow-x: hidden; /* Ngăn chặn cuộn ngang khi sidebar mở */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px; /* Chiều rộng sidebar trên màn hình lớn */
+    height: 100vh;
+    background-color: #f8f9fa;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0; /* Vị trí cố định cho desktop */
+}
+
+.sidebar .logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #b5b2b2;
+}
+
+.sidebar .logo img {
+    width: 120px;
+    height: auto;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+ul li {
+    margin: 25px 0;
+}
+
+ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+
+ul li a:hover, ul li a.active {
+    background-color: #d1e7ff;
+    color: #007bff;
+}
+
+ul li a i {
+    margin-right: 15px;
+    font-size: 22px;
+}
+
+/* Button to toggle the sidebar on mobile (not used anymore) */
+.sidebar-toggle {
+    display: none; /* Ẩn nút trên màn hình lớn */
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px; /* Dịch nội dung chính sang phải để tránh sidebar trên màn hình lớn */
+    flex-grow: 1;
+    background-color: #fff;
+    padding: 30px;
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #b5b2b2;
+    position: relative; /* Để vị trí tuyệt đối của nút hamburger hoạt động */
+}
+
+header h1 {
+    font-size: 24px; /* Kích thước tiêu đề nhỏ hơn */
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.user-info span {
+    font-weight: bold;
+    color: #333;
+    font-size: 18px;
+}
+
+.user-info p {
+    margin: 0;
+    color: #999;
+    font-size: 16px;
+}
+
+/* Content */
+.content {
+    margin-top: 30px;
+    background-color: #f4f7fc;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
