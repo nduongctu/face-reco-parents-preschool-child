@@ -24,6 +24,7 @@ app.add_middleware(TokenExpiryMiddleware)
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
+
 # Dependency để cung cấp kết nối với cơ sở dữ liệu
 def get_db():
     db = SessionLocal()
@@ -32,7 +33,9 @@ def get_db():
     finally:
         db.close()
 
+
 # Chạy ứng dụng FastAPI
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

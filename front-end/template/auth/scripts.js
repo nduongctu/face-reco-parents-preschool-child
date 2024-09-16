@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const authForm = document.querySelector('.login-form form');
     const baseURL = 'http://localhost:8000';
-    const endpoint = baseURL + '/auth/login';
+    const endpoint = `${baseURL}/auth/login`;
 
     authForm.addEventListener('submit', function(e) {
         e.preventDefault();
@@ -35,18 +35,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (tokenParts.length !== 3) {
                     throw new Error('Invalid token format.');
                 }
-                const payload = atob(tokenParts[1]);
-                const tokenPayload = JSON.parse(payload);
-                const role = tokenPayload.quyen;
+                const payload = JSON.parse(atob(tokenParts[1]));
+                const role = payload.quyen;
 
-                if (role === 0) {
-                    window.location.href = '../manage/admin/admin.html';
-                } else if (role === 1) {
-                    window.location.href = '../manage/giaovien/giaovien.html';
-                } else if (role === 2) {
-                    window.location.href = '../manage/hocsinh/hocsinh.html';
-                } else {
-                    alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
+                switch (role) {
+                    case 0:
+                        window.location.href = '../manage/admin/admin.html';
+                        break;
+                    case 1:
+                        window.location.href = '../manage/giaovien/giaovien.html';
+                        break;
+                    case 2:
+                        window.location.href = '../manage/hocsinh/hocsinh.html';
+                        break;
+                    default:
+                        alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');
                 }
             } catch (error) {
                 console.error('Error decoding token!', error);

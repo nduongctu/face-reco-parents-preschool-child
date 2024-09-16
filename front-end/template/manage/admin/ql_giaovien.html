@@ -9,33 +9,42 @@
     <link rel="icon" href="../../images/logo_mini.png" type="image/png">
 </head>
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <img src="../../images/logo_mini.png" alt="Logo"/>
-        </div>
-        <ul>
-            <li><a href="admin.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
-            <li><a href="ql_giaovien.html" class="active"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
-            <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
-        </ul>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
     </div>
+    <ul>
+        <li><a href="admin.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
+        <li><a href="ql_giaovien.html" class="active"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
+        <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
+    </ul>
+</div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <header>
-            <h1>Giáo Viên</h1>
-            <div class="user-info">
-                <img src="../../images/user_icon.png" alt="User"/>
-                <span>Admin</span>
-            </div>
-        </header>
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <h1>Giáo Viên</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User"/>
+            <span>Admin</span>
+        </div>
+    </header>
 
-        <!-- Dashboard Content -->
+    <!-- Dashboard Content -->
+    <div class="content">
+        <!-- Add your content here -->
         <div class="content">
-            <!-- Add your content here -->
+            <!-- Button thêm giáo viên -->
+            <button onclick="window.location.href='add_gv.html'">Thêm Giáo Viên</button>
+
+            <!-- Danh sách giáo viên sẽ được hiển thị ở đây -->
+            <div id="teacher-list"></div>
         </div>
+
     </div>
+</div>
+<script src="admin.js"></script>
 </body>
 </html>

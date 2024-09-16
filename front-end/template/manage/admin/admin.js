@@ -1,50 +1,43 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function () {
     const token = localStorage.getItem('access_token');
 
-    fetch('http://localhost:8000/users/me', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    .then(response => {
+    if (!token) {
+        alert('Token không tồn tại! Vui lòng đăng nhập lại.');
+        setTimeout(() => {
+            window.location.href = '../../auth/login.html';
+        }, 3000);
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:8000/auth/admin/me', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
         if (!response.ok) {
-            return response.json().then(data => {
-                // Hiển thị thông báo lỗi nếu không có quyền truy cập
-                alert('Không có quyền truy cập! Vui lòng đăng nhập lại.');
-                // Chuyển hướng về trang đăng nhập sau khi thông báo
-                setTimeout(() => {
-                    window.location.href = '../auth/login.html';
-                }, 3000);
-            });
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.quyen !== 0) { // Kiểm tra quyền
-            alert('Không có quyền truy cập! Vui lòng đăng nhập lại.');
-            // Chuyển hướng về trang đăng nhập sau khi thông báo
+            const errorData = await response.json();
+            alert(errorData.detail || 'Không có quyền truy cập hoặc token không hợp lệ! Vui lòng đăng nhập lại.');
             setTimeout(() => {
-                window.location.href = '../auth/login.html';
+                window.location.href = '../../auth/login.html';
+            }, 3000);
+            return;
+        }
+
+        const data = await response.json();
+        if (data.quyen !== 0) { // Kiểm tra quyền truy cập
+            alert('Không có quyền truy cập! Vui lòng đăng nhập lại.');
+            setTimeout(() => {
+                window.location.href = '../../auth/login.html';
             }, 3000);
         }
-    })
-    .catch(error => {
+    } catch (error) {
         console.error('Error fetching user info:', error);
-        // Hiển thị thông báo lỗi nếu có lỗi
         alert('Có lỗi xảy ra! Vui lòng đăng nhập lại.');
-        // Chuyển hướng về trang đăng nhập sau khi thông báo
         setTimeout(() => {
-            window.location.href = '../auth/login.html';
+            window.location.href = '../../auth/login.html';
         }, 3000);
-    });
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const sidebar = document.getElementById('sidebar');
-
-    sidebarToggle.addEventListener('click', function() {
-        sidebar.classList.toggle('open');
-    });
+    }
 });
