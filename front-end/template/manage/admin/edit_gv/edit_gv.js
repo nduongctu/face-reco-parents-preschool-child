@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!token) {
         alert('Token không tồn tại! Vui lòng đăng nhập lại.');
         setTimeout(() => {
-            window.location.href = '../../auth/login.html';
+            window.location.href = '../../../auth/login.html';
         }, 3000);
         return;
     }
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const errorData = await response.json();
             alert(errorData.detail || 'Không có quyền truy cập hoặc token không hợp lệ! Vui lòng đăng nhập lại.');
             setTimeout(() => {
-                window.location.href = '../../auth/login.html';
+                window.location.href = '../../../auth/login.html';
             }, 3000);
             return;
         }
@@ -30,14 +30,14 @@ document.addEventListener('DOMContentLoaded', async function () {
         if (data.quyen !== 0) { // Kiểm tra quyền truy cập
             alert('Không có quyền truy cập! Vui lòng đăng nhập lại.');
             setTimeout(() => {
-                window.location.href = '../../auth/login.html';
+                window.location.href = '../../../auth/login.html';
             }, 3000);
         }
     } catch (error) {
         console.error('Error fetching user info:', error);
         alert('Có lỗi xảy ra! Vui lòng đăng nhập lại.');
         setTimeout(() => {
-            window.location.href = '../../auth/login.html';
+            window.location.href = '../../../auth/login.html';
         }, 3000);
     }
 
@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             .then(response => {
                 if (response.ok) {
                     alert('Cập nhật thành công!');
-                    window.location.href = 'ql_giaovien.html'; // Quay lại trang danh sách giáo viên
+                    window.location.href = '../ql_giaovien.html'; // Quay lại trang danh sách giáo viên
                 } else {
                     return response.json().then(data => {
                         throw new Error(data.detail || 'Có lỗi xảy ra khi cập nhật thông tin.');

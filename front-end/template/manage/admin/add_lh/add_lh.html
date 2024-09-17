@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Lớp Học</title>
+    <link rel="stylesheet" href="add_lh.css">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="../tongquat.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
+        <li><a href="../ql_giaovien.html"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
+        <li><a href="../ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
+        <li><a href="../ql_lophoc.html" class="active"><i class="fas fa-book"></i>Lớp Học</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <a href="../ql_lophoc.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+        <h1>Thêm Lớp Học</h1>
+        <div class="user-info">
+            <img src="../../../images/user_icon.png" alt="User"/>
+            <span>Admin</span>
+        </div>
+    </header>
+
+    <!-- Form Thêm Lớp Học -->
+    <div class="content">
+        <form id="add-class-form">
+            <div>
+                <label for="ten_lop">Tên Lớp:</label>
+                <input type="text" id="ten_lop" name="ten_lop" required>
+            </div>
+            <div>
+                <label for="nam_hoc">Năm Học:</label>
+                <select id="nam_hoc" name="nam_hoc" required>
+                    <!-- Năm học sẽ được nạp động từ API -->
+                </select>
+            </div>
+            <div>
+                <label for="giaovien_lop">Giáo Viên:</label>
+                <select id="giaovien_lop" name="giaovien_lop" required>
+                    <!-- Giáo viên sẽ được nạp động từ API -->
+                </select>
+            </div>
+            <div>
+                <button type="submit">Thêm Lớp Học</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="add_lh.js"></script>
+</body>
+</html>

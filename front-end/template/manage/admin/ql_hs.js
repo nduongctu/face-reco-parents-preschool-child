@@ -43,8 +43,8 @@ document.addEventListener('DOMContentLoaded', async function () {
 });
 
 document.addEventListener('DOMContentLoaded', function () {
-    const apiUrl = 'http://localhost:8000/admin/teachers'; // Địa chỉ API lấy danh sách giáo viên
-    let teacherIdToDelete = null; // Biến lưu ID của giáo viên cần xóa
+    const apiUrl = 'http://localhost:8000/admin/students'; // Địa chỉ API lấy danh sách học sinh
+    let studentIdToDelete = null; // Biến lưu ID của học sinh cần xóa
 
     // Hàm để chuyển đổi định dạng ngày từ yyyy-mm-dd sang dd-mm-yyyy
     function formatDate(inputDate) {
@@ -58,30 +58,28 @@ document.addEventListener('DOMContentLoaded', function () {
         return `${year}-${month}-${day}`;
     }
 
-    // Hiển thị danh sách giáo viên
+    // Hiển thị danh sách học sinh
     fetch(apiUrl)
         .then(response => response.json())
-        .then(teachers => {
-            const tableBody = document.getElementById('teacher-list');
+        .then(students => {
+            const tableBody = document.getElementById('student-list');
             tableBody.innerHTML = ''; // Xóa nội dung bảng trước khi thêm dữ liệu mới
 
-            teachers.forEach(teacher => {
+            students.forEach(student => {
                 const row = document.createElement('tr');
 
                 // Chuyển đổi ngày sang định dạng dd-mm-yyyy
-                const formattedDate = formatDate(teacher.ngaysinh_gv);
+                const formattedDate = formatDate(student.ngaysinh_hs);
 
-                // Tạo các ô cho thông tin giáo viên
+                // Tạo các ô cho thông tin học sinh
                 row.innerHTML = `
-                    <td>${teacher.id_gv}</td>
-                    <td>${teacher.ten_gv}</td>
-                    <td>${teacher.gioitinh_gv}</td>
+                    <td>${student.id_hs}</td>
+                    <td>${student.ten_hs}</td>
+                    <td>${student.gioitinh_hs}</td>
                     <td>${formattedDate}</td>
-                    <td>${teacher.sdt_gv}</td>
-                    <td>${teacher.diachi_gv}</td>
-                    <td>${teacher.lop_hoc.map(lop => lop.ten_lop).join(', ') || 'Chưa có lớp'}</td>
-                    <td><a href="edit_gv/edit_gv.html?id=${teacher.id_gv}" class="btn-edit">Chỉnh Sửa</a></td>
-                    <td><button class="btn-delete" data-id="${teacher.id_gv}">Xóa</button></td>
+                    <td>${student.lop_hoc.map(lop => lop.ten_lop).join(', ') || 'Chưa có lớp'}</td>
+                    <td><a href="edit_hs/edit_hs.html?id=${student.id_hs}" class="btn-edit">Chỉnh Sửa</a></td>
+                    <td><button class="btn-delete" data-id="${student.id_hs}">Xóa</button></td>
                 `;
 
                 tableBody.appendChild(row);
@@ -90,15 +88,15 @@ document.addEventListener('DOMContentLoaded', function () {
             // Thêm sự kiện cho các nút xóa
             document.querySelectorAll('.btn-delete').forEach(button => {
                 button.addEventListener('click', function () {
-                    teacherIdToDelete = this.getAttribute('data-id');
+                    studentIdToDelete = this.getAttribute('data-id');
                     document.getElementById('popup-overlay').style.display = 'flex'; // Hiển thị pop-up
                 });
             });
 
             // Xử lý nút xác nhận xóa
             document.getElementById('confirm-delete').addEventListener('click', function () {
-                if (teacherIdToDelete) {
-                    fetch(`http://localhost:8000/admin/teachers/${teacherIdToDelete}`, {
+                if (studentIdToDelete) {
+                    fetch(`http://localhost:8000/admin/students/${studentIdToDelete}`, {
                         method: 'DELETE',
                     })
                         .then(response => {
@@ -106,12 +104,12 @@ document.addEventListener('DOMContentLoaded', function () {
                                 alert('Xóa thành công!');
                                 location.reload(); // Tải lại trang để cập nhật danh sách
                             } else {
-                                alert('Có lỗi xảy ra khi xóa giáo viên.');
+                                alert('Có lỗi xảy ra khi xóa học sinh.');
                             }
                         })
                         .catch(error => {
                             console.error('Lỗi khi xóa:', error);
-                            alert('Có lỗi xảy ra khi xóa giáo viên.');
+                            alert('Có lỗi xảy ra khi xóa học sinh.');
                         });
 
                     document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
@@ -121,23 +119,21 @@ document.addEventListener('DOMContentLoaded', function () {
             // Xử lý nút hủy
             document.getElementById('cancel-delete').addEventListener('click', function () {
                 document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
-                teacherIdToDelete = null; // Xóa ID của giáo viên cần xóa
+                studentIdToDelete = null; // Xóa ID của học sinh cần xóa
             });
         })
         .catch(error => {
             console.error('Lỗi khi lấy dữ liệu:', error);
         });
 });
-// ql_gv.js
-
 document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('search-input');
-    const teacherList = document.getElementById('teacher-list');
+    const studentList = document.getElementById('student-list');
 
-    // Hàm lọc danh sách giáo viên
-    function filterTeachers() {
+    // Hàm lọc danh sách học sinh
+    function filterStudents() {
         const query = searchInput.value.toLowerCase();
-        const rows = teacherList.getElementsByTagName('tr');
+        const rows = studentList.getElementsByTagName('tr');
 
         Array.from(rows).forEach(row => {
             const cells = row.getElementsByTagName('td');
@@ -153,5 +149,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Xử lý sự kiện nhập liệu trong ô tìm kiếm
-    searchInput.addEventListener('input', filterTeachers);
+    searchInput.addEventListener('input', filterStudents);
 });

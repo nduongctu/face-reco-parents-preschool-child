@@ -281,3 +281,21 @@ tr:hover {
     background-color: #6c757d; /* Màu xám cho nút hủy */
     color: #fff;
 }
+
+/* Định kiểu cho phần điều khiển tiêu đề (nút thêm và ô tìm kiếm) */
+.header-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Đặt các phần tử ở hai đầu đối diện */
+    margin-bottom: 20px; /* Thay đổi khoảng cách nếu cần */
+}
+
+/* Ô tìm kiếm */
+#search-input {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-width: 400px; /* Tùy chỉnh kích thước tối đa nếu cần */
+    width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
+}

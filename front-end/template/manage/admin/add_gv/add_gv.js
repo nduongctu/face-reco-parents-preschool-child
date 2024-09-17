@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!token) {
         alert('Token không tồn tại! Vui lòng đăng nhập lại.');
         setTimeout(() => {
-            window.location.href = '../../auth/login.html';
+            window.location.href = '../../../auth/login.html';
         }, 3000);
         return;
     }
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
         .then(response => {
             if (response.ok) {
                 alert('Thêm giáo viên thành công!');
-                window.location.href = 'ql_giaovien.html';
+                window.location.href = '../ql_giaovien.html';
             } else {
                 return response.json().then(data => {
                     throw new Error(data.detail || 'Có lỗi xảy ra khi thêm giáo viên.');

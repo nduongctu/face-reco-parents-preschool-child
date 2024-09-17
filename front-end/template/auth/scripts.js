@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 switch (role) {
                     case 0:
-                        window.location.href = '../manage/admin/admin.html';
+                        window.location.href = '../manage/admin/tongquat.html';
                         break;
                     case 1:
                         window.location.href = '../manage/giaovien/giaovien.html';

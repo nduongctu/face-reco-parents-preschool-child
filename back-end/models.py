@@ -8,7 +8,6 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
-# Định nghĩa mô hình TaiKhoan cho cơ sở dữ liệu
 class TaiKhoan(Base):
     __tablename__ = "TaiKhoan"
     id_taikhoan = Column(Integer, primary_key=True, index=True, autoincrement=True)
@@ -47,27 +46,29 @@ class HocSinh(Base):
     # Relationships
     tai_khoan = relationship("TaiKhoan", back_populates="hoc_sinh", uselist=False)
     phu_huynh_hs = relationship("PhuHuynh_HocSinh", back_populates="hoc_sinh")
-
-
-class NamHoc(Base):
-    __tablename__ = "NamHoc"
-    id_nh = Column(Integer, primary_key=True, index=True)
-    namhoc = Column(Integer, nullable=False)
-
-
-class HocKy(Base):
-    __tablename__ = "HocKy"
-    id_hk = Column(Integer, primary_key=True, index=True)
-    hocky = Column(Integer, nullable=False)
+    lop_hoc_hs = relationship("LopHoc_HocSinh", back_populates="hoc_sinh")
 
 
 class LopHoc(Base):
     __tablename__ = "LopHoc"
     id_lh = Column(Integer, primary_key=True, index=True)
     lophoc = Column(String(80), nullable=False)
+    id_nh = Column(Integer, ForeignKey('NamHoc.id_nh'))
 
     # Relationships
     giao_vien_lop = relationship("LopHoc_GiaoVien", back_populates="lop_hoc")
+    hoc_sinh_lop = relationship("LopHoc_HocSinh", back_populates="lop_hoc")
+    nam_hoc_ref = relationship("NamHoc", back_populates="lop_hoc")
+
+
+class NamHoc(Base):
+    __tablename__ = "NamHoc"
+
+    id_nh = Column(Integer, primary_key=True, index=True)
+    namhoc = Column(String, index=True, unique=True)
+
+    # Relationships
+    lop_hoc = relationship("LopHoc", back_populates="nam_hoc_ref")
 
 
 class LopHoc_GiaoVien(Base):
@@ -78,6 +79,16 @@ class LopHoc_GiaoVien(Base):
     # Relationships
     lop_hoc = relationship("LopHoc", back_populates="giao_vien_lop")
     giao_vien = relationship("GiaoVien", back_populates="lop_hoc")
+
+
+class LopHoc_HocSinh(Base):
+    __tablename__ = "LopHoc_HocSinh"
+    id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'), primary_key=True)
+    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), primary_key=True)
+
+    # Relationships
+    lop_hoc = relationship("LopHoc", back_populates="hoc_sinh_lop")
+    hoc_sinh = relationship("HocSinh", back_populates="lop_hoc_hs")
 
 
 class PhuHuynh(Base):

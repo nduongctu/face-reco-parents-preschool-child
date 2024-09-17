@@ -15,10 +15,11 @@
         <img src="../../images/logo_mini.png" alt="Logo"/>
     </div>
     <ul>
-        <li><a href="admin.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
         <li><a href="ql_giaovien.html" class="active"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
         <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
         <li><a href="ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
+        <li><a href="ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
     </ul>
 </div>
 
@@ -35,8 +36,11 @@
 
     <!-- Dashboard Content -->
     <div class="content">
-        <!-- Button thêm giáo viên -->
-        <button onclick="window.location.href='add_gv.html'" class="btn-add">Thêm Giáo Viên</button>
+        <!-- Tìm kiếm và nút thêm giáo viên -->
+        <div class="header-controls">
+            <button onclick="window.location.href='add_gv/add_gv.html'" class="btn-add">Thêm Giáo Viên</button>
+            <input type="text" id="search-input" placeholder="Tìm kiếm theo tên hoặc mã số giáo viên">
+        </div>
 
         <!-- Bảng danh sách giáo viên -->
         <table>
