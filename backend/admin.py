@@ -115,7 +115,11 @@ def get_class_by_id(class_id: int, db: Session = Depends(get_db)):
     cls = crud.get_class_by_id(db, class_id)
     if not cls:
         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
-    return cls
+
+    # Giả sử bạn lấy danh sách giáo viên từ lớp học
+    teachers = db.query(models.GiaoVien).filter(models.GiaoVien.id_lh == class_id).all()
+
+    return LopHocResponse.from_orm(cls, giao_vien=[GiaoVienResponse.from_orm(t) for t in teachers])
 
 
 @router.post("/classes", response_model=LopHocResponse)

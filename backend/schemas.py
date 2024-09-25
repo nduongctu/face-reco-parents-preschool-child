@@ -4,7 +4,6 @@ from datetime import date
 
 
 # Định nghĩa các lớp Pydantic
-
 class TaiKhoanBase(BaseModel):
     taikhoan: str
     matkhau: str
@@ -27,16 +26,6 @@ class NamHocBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)  # Sử dụng ConfigDict
 
 
-class LopHocBase(BaseModel):
-    id_lh: int
-    lophoc: str
-    namhoc: Optional[NamHocBase] = None
-    giao_vien: Optional[List['GiaoVienBase']] = None  # Sử dụng chuỗi để chỉ định lớp sau
-    tong_so_hoc_sinh: Optional[int] = None
-
-    model_config = ConfigDict(from_attributes=True)  # Sử dụng ConfigDict
-
-
 class GiaoVienBase(BaseModel):
     id_gv: int
     ten_gv: str
@@ -44,10 +33,21 @@ class GiaoVienBase(BaseModel):
     ngaysinh_gv: date
     diachi_gv: str
     sdt_gv: str
-    tai_khoan: Optional[TaiKhoanBase] = None
-    lop_hoc: Optional[List[LopHocBase]] = None
+    email_gv: str
+    tai_khoan_quyen: Optional[int] = None
+    lop_hoc_ten: Optional[List[str]] = None
 
-    model_config = ConfigDict(from_attributes=True)  # Sử dụng ConfigDict
+    model_config = ConfigDict(from_attributes=True)
+
+
+class LopHocBase(BaseModel):
+    id_lh: int
+    lophoc: str
+    giao_vien: Optional[GiaoVienBase] = None
+    nam_hoc: Optional[NamHocBase] = None
+    tong_so_hoc_sinh: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GiaoVienCreate(BaseModel):
@@ -58,8 +58,8 @@ class GiaoVienCreate(BaseModel):
     sdt_gv: str
     taikhoan: str
     matkhau: str
-    quyen: int = 1
-    lop_hoc_ids: List[int]
+    quyen: int = 1  # Mặc định quyền giáo viên
+    lop_hoc_ten: Optional[List[str]] = None  # Danh sách tên lớp học
 
 
 class GiaoVienUpdate(BaseModel):
@@ -68,8 +68,8 @@ class GiaoVienUpdate(BaseModel):
     ngaysinh_gv: Optional[date] = None
     diachi_gv: Optional[str] = None
     sdt_gv: Optional[str] = None
-    quyen: Optional[conint(ge=0, le=1)] = None
-    lop_hoc_ids: Optional[List[int]] = None
+    quyen: Optional[conint(ge=0, le=1)] = None  # Quyền chỉ trong khoảng [0, 1]
+    lop_hoc_ten: Optional[List[str]] = None
 
 
 class GiaoVienResponse(GiaoVienBase):
@@ -81,8 +81,8 @@ class HocSinhBase(BaseModel):
     ten_hs: str
     gioitinh_hs: str
     ngaysinh_hs: date
-    lop_hoc: Optional[List[LopHocBase]] = []
-    phu_huynh: Optional[List[PhuHuynhBase]] = None
+    lop_hoc: Optional[LopHocBase] = None  # Sử dụng một lớp LopHoc duy nhất
+    phu_huynh: Optional[List[PhuHuynhBase]] = None  # Danh sách phụ huynh
     tai_khoan: Optional[TaiKhoanBase] = None
 
     model_config = ConfigDict(from_attributes=True)  # Sử dụng ConfigDict
@@ -94,8 +94,8 @@ class HocSinhCreate(BaseModel):
     ngaysinh_hs: date
     taikhoan: str
     matkhau: str
-    quyen: int = 2
-    lop_hoc_ids: List[int]
+    quyen: int = 2  # Mặc định quyền học sinh
+    lop_hoc_ids: List[int]  # Danh sách ID lớp học
 
 
 class HocSinhUpdate(BaseModel):
@@ -111,14 +111,14 @@ class HocSinhResponse(HocSinhBase):
 
 class LopHocCreate(BaseModel):
     lophoc: str
+    ten_gv: Optional[str] = None
     namhoc: str
-    ten_gv: Optional[List[str]] = None
 
 
 class LopHocUpdate(BaseModel):
     lophoc: Optional[str] = None
+    ten_gv: Optional[str] = None
     namhoc: Optional[str] = None
-    ten_gv: Optional[List[str]] = None
 
 
 class LopHocResponse(LopHocBase):
@@ -154,7 +154,7 @@ class TaiKhoanCreate(BaseModel):
 class TaiKhoanUpdate(BaseModel):
     taikhoan: Optional[str] = None
     matkhau: Optional[str] = None
-    quyen: int
+    quyen: Optional[int] = None
 
 
 class TaiKhoanResponse(TaiKhoanBase):
