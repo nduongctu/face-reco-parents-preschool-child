@@ -1,9 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import settings
-from login import router as auth_router
-from admin import router as admin_router
-from middleware import TokenExpiryMiddleware
+from backend.config import settings
+from backend.login import router as auth_router
+from backend.admin import router as admin_router
+from backend.middleware import TokenExpiryMiddleware
 
 # Tạo đối tượng FastAPI
 app = FastAPI()
