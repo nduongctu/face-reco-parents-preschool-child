@@ -36,6 +36,7 @@ class GiaoVienBase(BaseModel):
     email_gv: str
     tai_khoan_quyen: Optional[int] = None
     lop_hoc_ten: Optional[List[str]] = None
+    id_taikhoan: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -54,22 +55,28 @@ class GiaoVienCreate(BaseModel):
     ten_gv: str
     gioitinh_gv: str
     ngaysinh_gv: date
-    diachi_gv: str
     sdt_gv: str
+    diachi_gv: str
+    email_gv: str
     taikhoan: str
     matkhau: str
-    quyen: int = 1  # Mặc định quyền giáo viên
-    lop_hoc_ten: Optional[List[str]] = None  # Danh sách tên lớp học
+    quyen: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GiaoVienUpdate(BaseModel):
+    id_gv: int
     ten_gv: Optional[str] = None
     gioitinh_gv: Optional[str] = None
     ngaysinh_gv: Optional[date] = None
     diachi_gv: Optional[str] = None
     sdt_gv: Optional[str] = None
-    quyen: Optional[conint(ge=0, le=1)] = None  # Quyền chỉ trong khoảng [0, 1]
+    email_gv: Optional[str] = None
+    quyen: Optional[int] = None
     lop_hoc_ten: Optional[List[str]] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class GiaoVienResponse(GiaoVienBase):

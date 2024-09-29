@@ -11,8 +11,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     try {
         const response = await fetch('http://localhost:8000/auth/admin/me', {
-            method: 'GET',
-            headers: {
+            method: 'GET', headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
@@ -77,9 +76,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${teacher.ten_gv}</td>
                     <td>${teacher.gioitinh_gv}</td>
                     <td>${formattedDate}</td>
-                    <td>${teacher.sdt_gv}</td>
                     <td>${teacher.diachi_gv}</td>
-                    <td>${teacher.lop_hoc.map(lop => lop.ten_lop).join(', ') || 'Chưa có lớp'}</td>
+                    <td>${teacher.sdt_gv}</td>  
+                    <td>${teacher.email_gv}</td>
+                    <td>${teacher.tai_khoan_quyen === 0 ? 'Quản Lý' : 'Giáo Viên'}</td>
+                    <td>${teacher.lop_hoc_ten.length > 0 ? teacher.lop_hoc_ten.join(', ') : 'Chưa có lớp'}</td>
                     <td><a href="edit_gv/edit_gv.html?id=${teacher.id_gv}" class="btn-edit">Chỉnh Sửa</a></td>
                     <td><button class="btn-delete" data-id="${teacher.id_gv}">Xóa</button></td>
                 `;

@@ -20,7 +20,7 @@
         <li><a href="../ql_giaovien.html" class="active"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
         <li><a href="../ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
         <li><a href="../ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
-        <li><a href="ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
+        <li><a href="../ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
 
     </ul>
 </div>
@@ -65,6 +65,25 @@
             <div>
                 <label for="diachi_gv">Địa Chỉ:</label>
                 <input type="text" id="diachi_gv" name="diachi_gv" required>
+            </div>
+            <div>
+                <label for="email_gv">Email:</label>
+                <input type="email" id="email_gv" name="email_gv" required>
+            </div>
+            <div>
+                <label for="taikhoan">Tài Khoản:</label>
+                <input type="text" id="taikhoan" name="taikhoan" required>
+            </div>
+            <div>
+                <label for="matkhau">Mật Khẩu:</label>
+                <input type="password" id="matkhau" name="matkhau" required>
+            </div>
+            <div>
+                <label for="quyen">Quyền:</label>
+                <select id="quyen" name="quyen" required>
+                    <option value="1">Giáo Viên</option>
+                    <option value="0">Quản Lý</option>
+                </select>
             </div>
             <div>
                 <button type="submit">Thêm Giáo Viên</button>

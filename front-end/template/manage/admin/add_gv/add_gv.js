@@ -17,9 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
         const ngaysinh_gv = document.getElementById('ngaysinh_gv').value;
         const sdt_gv = document.getElementById('sdt_gv').value;
         const diachi_gv = document.getElementById('diachi_gv').value;
+        const email_gv = document.getElementById('email_gv').value; // Thêm email
+        const taikhoan = document.getElementById('taikhoan').value; // Thêm tài khoản
+        const matkhau = document.getElementById('matkhau').value; // Thêm mật khẩu
+        const quyen = document.getElementById('quyen').value; // Thêm quyền
 
         const sdtError = document.getElementById('sdt_error');
 
+        // Kiểm tra độ dài số điện thoại
         if (sdt_gv.length !== 10) {
             sdtError.style.display = 'block';
             return;
@@ -38,7 +43,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 gioitinh_gv,
                 ngaysinh_gv,
                 sdt_gv,
-                diachi_gv
+                diachi_gv,
+                email_gv, // Thêm email vào body
+                taikhoan, // Thêm tài khoản vào body
+                matkhau, // Thêm mật khẩu vào body
+                quyen // Thêm quyền vào body
             })
         })
         .then(response => {

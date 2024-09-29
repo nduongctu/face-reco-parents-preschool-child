@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from backend import models, schemas
 from passlib.context import CryptContext
+from typing import List, Optional
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -13,28 +14,100 @@ def hash_password(password):
 # =======================
 # Teacher CRUD Functions
 # =======================
-def get_all_teachers(db: Session):
-    return db.query(models.GiaoVien).all()
+def get_all_teachers(db: Session) -> List[schemas.GiaoVienResponse]:
+    # Query bảng GiaoVien và join với TaiKhoan và LopHoc
+    teachers = db.query(models.GiaoVien).options(
+        joinedload(models.GiaoVien.tai_khoan),  # Load thông tin tài khoản
+        joinedload(models.GiaoVien.lop_hocs)  # Load thông tin lớp học
+    ).all()
+
+    # Xử lý dữ liệu và chuyển đổi thành mô hình Pydantic
+    result = []
+    for teacher in teachers:
+        # Lấy quyền tài khoản từ bảng TaiKhoan (nếu có)
+        tai_khoan_quyen = teacher.tai_khoan.quyen if teacher.tai_khoan else None
+
+        # Lấy danh sách tên lớp học từ bảng LopHoc (nếu có)
+        lop_hoc_ten = [lop.lophoc for lop in teacher.lop_hocs] if teacher.lop_hocs else []
+
+        # Lấy id_taikhoan từ bảng TaiKhoan (nếu có)
+        id_taikhoan = teacher.tai_khoan.id_taikhoan if teacher.tai_khoan else None
+
+        # Tạo đối tượng GiaoVienResponse từ dữ liệu đã xử lý
+        teacher_data = schemas.GiaoVienResponse(
+            id_gv=teacher.id_gv,
+            ten_gv=teacher.ten_gv,
+            gioitinh_gv=teacher.gioitinh_gv,
+            ngaysinh_gv=teacher.ngaysinh_gv,
+            diachi_gv=teacher.diachi_gv,
+            sdt_gv=teacher.sdt_gv,
+            email_gv=teacher.email_gv,
+            tai_khoan_quyen=tai_khoan_quyen,
+            lop_hoc_ten=lop_hoc_ten,
+            id_taikhoan=id_taikhoan
+        )
+
+        result.append(teacher_data)
+
+    return result
 
 
-def get_teacher_by_id(db: Session, teacher_id: int):
-    teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == teacher_id).first()
+def get_teacher_by_id(db: Session, teacher_id: int) -> schemas.GiaoVienResponse:
+    # Truy vấn giáo viên theo ID
+    teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == teacher_id).options(
+        joinedload(models.GiaoVien.tai_khoan),
+        joinedload(models.GiaoVien.lop_hocs)
+    ).first()
+
+    # Kiểm tra nếu không tìm thấy giáo viên
     if teacher is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy giáo viên")
-    return teacher
+
+    # Lấy thông tin quyền tài khoản từ bảng TaiKhoan
+    tai_khoan_quyen = teacher.tai_khoan.quyen if teacher.tai_khoan else None
+
+    # Lấy danh sách tên lớp học từ bảng LopHoc
+    lop_hoc_ten = [lop.lophoc for lop in teacher.lop_hocs] if teacher.lop_hocs else []
+
+    # Lấy id_taikhoan từ bảng TaiKhoan
+    id_taikhoan = teacher.tai_khoan.id_taikhoan if teacher.tai_khoan else None
+
+    # Tạo đối tượng GiaoVienResponse từ dữ liệu đã xử lý
+    teacher_data = schemas.GiaoVienResponse(
+        id_gv=teacher.id_gv,
+        ten_gv=teacher.ten_gv,
+        gioitinh_gv=teacher.gioitinh_gv,
+        ngaysinh_gv=teacher.ngaysinh_gv,
+        diachi_gv=teacher.diachi_gv,
+        sdt_gv=teacher.sdt_gv,
+        email_gv=teacher.email_gv,
+        tai_khoan_quyen=tai_khoan_quyen,
+        lop_hoc_ten=lop_hoc_ten,
+        id_taikhoan=id_taikhoan
+    )
+
+    return teacher_data
 
 
 def create_teacher(db: Session, teacher: schemas.GiaoVienCreate):
+    # Kiểm tra xem tài khoản đã tồn tại chưa
+    existing_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == teacher.taikhoan).first()
+    if existing_account:
+        raise HTTPException(status_code=400, detail="Tên tài khoản đã tồn tại. Vui lòng chọn tên tài khoản khác.")
+
+    # Tạo tài khoản mới
     new_account = models.TaiKhoan(
         taikhoan=teacher.taikhoan,
-        matkhau=hash_password(teacher.matkhau),
+        matkhau=hash_password(teacher.matkhau),  # Băm mật khẩu
         quyen=teacher.quyen
     )
 
+    # Thêm tài khoản vào cơ sở dữ liệu
     db.add(new_account)
-    db.commit()
-    db.refresh(new_account)
+    db.commit()  # Lưu thay đổi
+    db.refresh(new_account)  # Cập nhật đối tượng tài khoản với ID mới
 
+    # Tạo giáo viên mới
     new_teacher = models.GiaoVien(
         ten_gv=teacher.ten_gv,
         gioitinh_gv=teacher.gioitinh_gv,
@@ -42,45 +115,94 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate):
         diachi_gv=teacher.diachi_gv,
         sdt_gv=teacher.sdt_gv,
         email_gv=teacher.email_gv,
+        id_taikhoan=new_account.id_taikhoan  # Gắn khóa ngoại với tài khoản
+    )
+
+    # Thêm giáo viên vào cơ sở dữ liệu
+    db.add(new_teacher)
+    try:
+        db.commit()  # Lưu thay đổi
+        db.refresh(new_teacher)  # Cập nhật đối tượng giáo viên với ID mới
+    except Exception as e:
+        db.rollback()  # Hoàn tác nếu có lỗi
+        raise HTTPException(status_code=400, detail=str(e))  # Thông báo lỗi
+
+    return schemas.GiaoVienResponse(
+        id_gv=new_teacher.id_gv,
+        ten_gv=new_teacher.ten_gv,
+        gioitinh_gv=new_teacher.gioitinh_gv,
+        ngaysinh_gv=new_teacher.ngaysinh_gv,
+        diachi_gv=new_teacher.diachi_gv,
+        sdt_gv=new_teacher.sdt_gv,
+        email_gv=new_teacher.email_gv,
+        tai_khoan_quyen=new_account.quyen,
+        lop_hoc_ten=[],  # Có thể cập nhật sau
         id_taikhoan=new_account.id_taikhoan
     )
 
-    db.add(new_teacher)
-    try:
-        db.commit()
-        db.refresh(new_teacher)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-    return new_teacher
-
 
 def update_teacher(db: Session, teacher_id: int, teacher: schemas.GiaoVienUpdate):
-    db_teacher = get_teacher_by_id(db, teacher_id)
+    # Lấy thông tin giáo viên từ cơ sở dữ liệu
+    db_teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == teacher_id).first()
 
-    for key, value in teacher.dict(exclude={"quyen"}).items():
+    if not db_teacher:
+        raise HTTPException(status_code=404, detail="Giáo viên không tồn tại.")
+
+    # Cập nhật thông tin giáo viên từ thông tin nhận được
+    for key, value in teacher.dict(exclude={"quyen", "lop_hoc_ten"}).items():
         if value is not None:
             setattr(db_teacher, key, value)
 
-    if teacher.quyen is not None:
-        db_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.id_taikhoan == db_teacher.id_taikhoan).first()
-        if db_account:
-            db_account.quyen = teacher.quyen
+    # Khởi tạo db_account với giá trị None
+    db_account = None
 
+    # Cập nhật quyền nếu có
+    if teacher.quyen is not None:
+        # Lấy tài khoản liên kết với giáo viên
+        db_account = db.query(models.TaiKhoan).filter(
+            models.TaiKhoan.id_taikhoan == db_teacher.id_taikhoan).first()
+
+        if db_account is None:
+            raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản tương ứng.")
+
+        # Cập nhật quyền tài khoản
+        db_account.quyen = teacher.quyen
+
+    # Lưu thay đổi vào cơ sở dữ liệu
     db.commit()
-    db.refresh(db_teacher)
-    return db_teacher
+
+    # Chuyển đổi đối tượng giáo viên thành dạng dữ liệu trả về
+    teacher_data = schemas.GiaoVienResponse(  # Đảm bảo bạn sử dụng GiaoVienResponse
+        id_gv=db_teacher.id_gv,
+        ten_gv=db_teacher.ten_gv,
+        gioitinh_gv=db_teacher.gioitinh_gv,
+        ngaysinh_gv=db_teacher.ngaysinh_gv,
+        diachi_gv=db_teacher.diachi_gv,
+        sdt_gv=db_teacher.sdt_gv,
+        email_gv=db_teacher.email_gv,
+        tai_khoan_quyen=db_account.quyen if db_account else None,
+        lop_hoc_ten=[],  # Có thể cập nhật danh sách lớp học nếu cần
+        id_taikhoan=db_teacher.id_taikhoan
+    )
+
+    return teacher_data
 
 
 def delete_teacher(db: Session, teacher_id: int):
-    db_teacher = get_teacher_by_id(db, teacher_id)
+    # Lấy thông tin giáo viên dựa vào ID
+    db_teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == teacher_id).first()
+
+    if db_teacher is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy giáo viên")
+
+    # Lấy tài khoản của giáo viên
     db_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.id_taikhoan == db_teacher.id_taikhoan).first()
 
-    if db_account is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
-
+    # Xóa giáo viên và tài khoản
     db.delete(db_teacher)
-    db.delete(db_account)
+    if db_account:
+        db.delete(db_account)
+
     db.commit()
 
 

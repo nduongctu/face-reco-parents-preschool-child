@@ -21,7 +21,6 @@
         <li><a href="../ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
         <li><a href="../ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
         <li><a href="../ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
-
     </ul>
 </div>
 
@@ -42,7 +41,10 @@
     <!-- Edit Form -->
     <div class="content">
         <form id="edit-teacher-form">
-            <input type="hidden" id="teacher-id" name="id_gv">
+            <div>
+                <label for="ma_gv">Mã Giáo Viên:</label>
+                <input type="text" id="ma_gv" name="ma_gv" required readonly>
+            </div>
             <div>
                 <label for="ten_gv">Họ Tên:</label>
                 <input type="text" id="ten_gv" name="ten_gv" required>
@@ -54,10 +56,13 @@
                     <option value="Nữ">Nữ</option>
                 </select>
             </div>
-
             <div>
                 <label for="ngaysinh_gv">Ngày Sinh:</label>
                 <input type="date" id="ngaysinh_gv" name="ngaysinh_gv" required>
+            </div>
+            <div>
+                <label for="diachi_gv">Địa Chỉ:</label>
+                <input type="text" id="diachi_gv" name="diachi_gv" required>
             </div>
             <div>
                 <label for="sdt_gv">Số Điện Thoại:</label>
@@ -65,8 +70,15 @@
                 <small id="sdt_error" style="color:red; display:none;">Số điện thoại phải đúng 10 chữ số.</small>
             </div>
             <div>
-                <label for="diachi_gv">Địa Chỉ:</label>
-                <input type="text" id="diachi_gv" name="diachi_gv" required>
+                <label for="email_gv">Email:</label>
+                <input type="email" id="email_gv" name="email_gv" required>
+            </div>
+            <div>
+                <label for="quyen">Quyền:</label>
+                <select id="quyen" name="quyen" required>
+                    <option value="1">Giáo Viên</option>
+                    <option value="0">Quản Lý</option>
+                </select>
             </div>
             <div>
                 <button type="submit">Lưu Thay Đổi</button>
