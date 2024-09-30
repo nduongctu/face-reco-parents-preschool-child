@@ -58,44 +58,46 @@ def delete_teacher(teacher_id: int, db: Session = Depends(get_db)):
         return {"message": "Xóa giáo viên thành công"}
     except HTTPException as e:
         raise e  # Nếu có lỗi xảy ra, ném lại lỗi để FastAPI xử lý
-#
-#
-# # Các route API học sinh
-# @router.get("/students", response_model=List[HocSinhResponse])
-# def get_all_students(db: Session = Depends(get_db)):
-#     students = crud.get_all_students(db)
-#     if not students:
-#         raise HTTPException(status_code=404, detail="Không có học sinh nào")
-#     return students
-#
-#
-# @router.get("/students/{student_id}", response_model=HocSinhResponse)
-# def get_student_by_id(student_id: int, db: Session = Depends(get_db)):
-#     db_student = crud.get_student_by_id(db, student_id)
-#     if db_student is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
-#     return db_student
-#
-#
-# @router.post("/students", response_model=HocSinhResponse)
-# def create_student(student: HocSinhCreate, db: Session = Depends(get_db)):
-#     return crud.create_student(db, student)
-#
-#
-# @router.put("/students/{student_id}", response_model=HocSinhResponse)
-# def update_student(student_id: int, student: HocSinhUpdate, db: Session = Depends(get_db)):
-#     db_student = crud.update_student(db, student_id, student)
-#     if db_student is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
-#     return db_student
-#
-#
-# @router.delete("/students/{student_id}", response_model=dict)
-# def delete_student(student_id: int, db: Session = Depends(get_db)):
-#     crud.delete_student(db, student_id)
-#     return {"detail": "Xóa học sinh thành công"}
-#
-#
+
+
+# Các route API học sinh
+@router.get("/students", response_model=List[schemas.HocSinhResponse])
+def get_all_students(db: Session = Depends(get_db)):
+    students = crud.get_all_students(db)
+    if not students:
+        raise HTTPException(status_code=404, detail="Không có học sinh nào")
+    return students
+
+
+@router.get("/students/{student_id}", response_model=schemas.HocSinhResponse)
+async def read_student(student_id: int, db: Session = Depends(get_db)):
+    db_student = crud.get_student_by_id(db, student_id)
+    return db_student
+
+
+@router.post("/students", response_model=schemas.HocSinhResponse)
+def create_student(student: schemas.HocSinhCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_student_with_parents(db, student)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.put("/students/{student_id}", response_model=schemas.HocSinhResponse)
+def update_student(student_id: int, student: schemas.HocSinhUpdate, db: Session = Depends(get_db)):
+    db_student = crud.update_student_with_parents(db, student_id, student)
+
+    if db_student is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
+    return db_student
+
+
+@router.delete("/students/{student_id}", response_model=dict)
+def delete_student(student_id: int, db: Session = Depends(get_db)):
+    # Gọi hàm delete_student trong crud
+    crud.delete_student(db, student_id)
+    return {"detail": "Xóa học sinh thành công"}
+
 # # Các route API lớp học
 # @router.get("/classes", response_model=List[LopHocResponse])
 # def get_all_classes(db: Session = Depends(get_db)):

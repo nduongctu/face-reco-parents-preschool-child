@@ -29,7 +29,7 @@ class GiaoVien(Base):
 class HocSinh(Base):
     __tablename__ = 'HocSinh'
 
-    id_hs = Column(Integer, primary_key=True, index=True)
+    id_hs = Column(Integer, primary_key=True, index=True,autoincrement=True)
     ten_hs = Column(String(100), nullable=False)
     gioitinh_hs = Column(String(10), nullable=False)
     ngaysinh_hs = Column(Date, nullable=False)
@@ -75,12 +75,12 @@ class LopHoc(Base):
 class PhuHuynh(Base):
     __tablename__ = 'PhuHuynh'
 
-    id_ph = Column(Integer, primary_key=True, index=True)
+    id_ph = Column(Integer, primary_key=True, index=True,autoincrement=True)
     ten_ph = Column(String(100), nullable=False)
     gioitinh_ph = Column(String(5), nullable=False)
-    ngaysinh_ph = Column(Date, nullable=False)
-    sdt_ph = Column(String(20), nullable=False)
-    diachi_ph = Column(String(255), nullable=False)
+    ngaysinh_ph = Column(Date, nullable=True)
+    sdt_ph = Column(String(20), nullable=True)
+    diachi_ph = Column(String(255), nullable=True)
 
     # Quan hệ với bảng PhuHuynh_HocSinh
     phu_hoc_sinh = relationship("PhuHuynh_HocSinh", back_populates="phu_huynh")
@@ -93,8 +93,8 @@ class PhuHuynh(Base):
 class PhuHuynh_HocSinh(Base):
     __tablename__ = 'PhuHuynh_HocSinh'
 
-    id_ph = Column(Integer, ForeignKey('PhuHuynh.id_ph'), primary_key=True)
-    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), primary_key=True)
+    id_ph = Column(Integer, ForeignKey('PhuHuynh.id_ph'), primary_key=True, nullable=False)
+    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), primary_key=True, nullable=False)
     quanhe = Column(String(20), nullable=False)
 
     # Quan hệ với bảng PhuHuynh

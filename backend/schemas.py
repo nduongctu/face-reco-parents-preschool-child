@@ -83,16 +83,23 @@ class GiaoVienResponse(GiaoVienBase):
     pass
 
 
+class PhuHuynhInfo(BaseModel):
+    id_ph: Optional[int] = None
+    ten_ph: str
+    quanhe: str
+    gioitinh_ph: str
+
+
 class HocSinhBase(BaseModel):
     id_hs: int
     ten_hs: str
     gioitinh_hs: str
     ngaysinh_hs: date
-    lop_hoc: Optional[LopHocBase] = None  # Sử dụng một lớp LopHoc duy nhất
-    phu_huynh: Optional[List[PhuHuynhBase]] = None  # Danh sách phụ huynh
-    tai_khoan: Optional[TaiKhoanBase] = None
+    lop_hoc_ten: Optional[str] = None
+    phu_huynh: Optional[List[PhuHuynhInfo]] = None
+    id_taikhoan: Optional[int] = None
 
-    model_config = ConfigDict(from_attributes=True)  # Sử dụng ConfigDict
+    model_config = ConfigDict(from_attributes=True)
 
 
 class HocSinhCreate(BaseModel):
@@ -102,14 +109,9 @@ class HocSinhCreate(BaseModel):
     taikhoan: str
     matkhau: str
     quyen: int = 2  # Mặc định quyền học sinh
-    lop_hoc_ids: List[int]  # Danh sách ID lớp học
+    phu_huynh: Optional[List[PhuHuynhInfo]] = None
 
-
-class HocSinhUpdate(BaseModel):
-    ten_hs: Optional[str] = None
-    gioitinh_hs: Optional[str] = None
-    ngaysinh_hs: Optional[date] = None
-    lop_hoc_ids: Optional[List[int]] = []
+    model_config = ConfigDict(from_attributes=True)
 
 
 class HocSinhResponse(HocSinhBase):
@@ -121,11 +123,15 @@ class LopHocCreate(BaseModel):
     ten_gv: Optional[str] = None
     namhoc: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class LopHocUpdate(BaseModel):
     lophoc: Optional[str] = None
     ten_gv: Optional[str] = None
     namhoc: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class LopHocResponse(LopHocBase):
@@ -139,13 +145,29 @@ class PhuHuynhCreate(BaseModel):
     sdt_ph: str
     diachi_ph: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class PhuHuynhUpdate(BaseModel):
+    id_ph: Optional[int] = None  # Trường này vẫn giữ để có thể cập nhật
     ten_ph: Optional[str] = None
     gioitinh_ph: Optional[str] = None
     ngaysinh_ph: Optional[date] = None
     sdt_ph: Optional[str] = None
     diachi_ph: Optional[str] = None
+    quanhe: Optional[str] = None  # Thêm trường quan hệ
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class HocSinhUpdate(BaseModel):
+    ten_hs: Optional[str] = None
+    gioitinh_hs: Optional[str] = None
+    ngaysinh_hs: Optional[date] = None
+    lop_hoc_ten: Optional[str]
+    phu_huynh: Optional[List[PhuHuynhUpdate]] = []  # Thay đổi đây để có thể thêm phụ huynh
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class PhuHuynhResponse(PhuHuynhBase):
@@ -157,11 +179,15 @@ class TaiKhoanCreate(BaseModel):
     matkhau: str
     quyen: int
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class TaiKhoanUpdate(BaseModel):
     taikhoan: Optional[str] = None
     matkhau: Optional[str] = None
     quyen: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class TaiKhoanResponse(TaiKhoanBase):
@@ -171,9 +197,13 @@ class TaiKhoanResponse(TaiKhoanBase):
 class NamHocCreate(BaseModel):
     namhoc: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 
 class NamHocUpdate(BaseModel):
     namhoc: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class NamHocResponse(NamHocBase):

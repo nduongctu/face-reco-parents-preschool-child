@@ -20,8 +20,7 @@
         <li><a href="../ql_giaovien.html"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
         <li><a href="../ql_hocsinh.html" class="active"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
         <li><a href="../ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
-        <li><a href="ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
-
+        <li><a href="../ql_taikhoan.html"><i class="fas fa-user"></i>Tài Khoản</a></li>
     </ul>
 </div>
 
@@ -39,7 +38,7 @@
         </div>
     </header>
 
-    <!-- Form Thêm Giáo Viên -->
+    <!-- Form Thêm Học Sinh -->
     <div class="content">
         <form id="add-student-form">
             <div>
@@ -57,6 +56,39 @@
                 <label for="ngaysinh_hs">Ngày Sinh:</label>
                 <input type="date" id="ngaysinh_hs" name="ngaysinh_hs" required>
             </div>
+
+            <div>
+                <label for="taikhoan_hs">Tài Khoản:</label>
+                <input type="text" id="taikhoan_hs" name="taikhoan_hs" required>
+            </div>
+            <div>
+                <label for="matkhau_hs">Mật Khẩu:</label>
+                <input type="password" id="matkhau_hs" name="matkhau_hs" required>
+            </div>
+
+            <div id="parent-container">
+                <h3>Thông Tin Phụ Huynh</h3>
+                <div class="parent-entry">
+                    <input type="text" placeholder="Tên Phụ Huynh" required>
+                    <select required>
+                        <option value="">Chọn Quan Hệ</option>
+                        <option value="Cha">Cha</option>
+                        <option value="Mẹ">Mẹ</option>
+                        <option value="Người Giám Hộ">Người Giám Hộ</option>
+                    </select>
+                    <!-- Thêm trường Giới Tính cho phụ huynh -->
+                    <select required>
+                        <option value="">Chọn Giới Tính</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                    </select>
+                    <button type="button" class="btn-remove-parent">Xóa</button>
+                </div>
+                <button type="button" class="btn-add-parent" id="btn-add-parent">
+                    <i class="fas fa-plus"></i> Thêm Phụ Huynh
+                </button>
+            </div>
+
             <div>
                 <button type="submit">Thêm Học Sinh</button>
             </div>

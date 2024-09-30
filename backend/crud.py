@@ -209,64 +209,240 @@ def delete_teacher(db: Session, teacher_id: int):
 # =======================
 # Student CRUD Functions
 # =======================
-def get_all_students(db: Session):
-    return db.query(models.HocSinh).all()
+def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
+    students = db.query(models.HocSinh).options(
+        joinedload(models.HocSinh.tai_khoan),
+        joinedload(models.HocSinh.lop_hoc),
+        joinedload(models.HocSinh.phu_huynhs)
+    ).all()
+
+    result = []
+    for student in students:
+        lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
+
+        # Lấy danh sách thông tin phụ huynh từ bảng PhuHuynh_HocSinh
+        phu_huynh_info = [
+            {
+                "id_ph": phu_huynh.phu_huynh.id_ph,  # Thêm id_ph ở đây
+                "ten_ph": phu_huynh.phu_huynh.ten_ph,
+                "quanhe": phu_huynh.quanhe,
+                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
+
+            }
+            for phu_huynh in student.phu_huynhs
+        ]
+
+        id_taikhoan = student.tai_khoan.id_taikhoan if student.tai_khoan else None
+
+        student_data = schemas.HocSinhResponse(
+            id_hs=student.id_hs,
+            ten_hs=student.ten_hs,
+            gioitinh_hs=student.gioitinh_hs,
+            ngaysinh_hs=student.ngaysinh_hs,
+            lop_hoc_ten=lop_hoc_ten,
+            phu_huynh=phu_huynh_info,
+            id_taikhoan=id_taikhoan
+        )
+
+        result.append(student_data)
+
+    return result
 
 
-def get_student_by_id(db: Session, student_id: int):
-    student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == student_id).first()
-    if student is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
-    return student
+def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
+    student = db.query(models.HocSinh).options(
+        joinedload(models.HocSinh.tai_khoan),
+        joinedload(models.HocSinh.lop_hoc),
+        joinedload(models.HocSinh.phu_huynhs)
+    ).filter(models.HocSinh.id_hs == student_id).first()
 
+    if not student:
+        raise HTTPException(status_code=404, detail="Học sinh không tìm thấy")
 
-def create_student(db: Session, student: schemas.HocSinhCreate):
-    new_account = models.TaiKhoan(
-        taikhoan=student.taikhoan,
-        matkhau=hash_password(student.matkhau),
-        quyen=2
+    lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
+
+    # Lấy thông tin phụ huynh, bao gồm cả giới tính
+    phu_huynh_info = [
+        {
+            "id_ph": phu_huynh.phu_huynh.id_ph,  # ID phụ huynh
+            "ten_ph": phu_huynh.phu_huynh.ten_ph,
+            "quanhe": phu_huynh.quanhe,
+            "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
+        }
+        for phu_huynh in student.phu_huynhs
+    ]
+
+    id_taikhoan = student.tai_khoan.id_taikhoan if student.tai_khoan else None
+
+    student_data = schemas.HocSinhResponse(
+        id_hs=student.id_hs,
+        ten_hs=student.ten_hs,
+        gioitinh_hs=student.gioitinh_hs,
+        ngaysinh_hs=student.ngaysinh_hs,
+        lop_hoc_ten=lop_hoc_ten,
+        phu_huynh=phu_huynh_info,
+        id_taikhoan=id_taikhoan
     )
 
+    return student_data
+
+
+def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate):
+    # 1. Tạo tài khoản cho học sinh
+    existing_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == student_data.taikhoan).first()
+    if existing_account:
+        raise HTTPException(status_code=400, detail="Tài khoản đã tồn tại")
+
+    new_account = models.TaiKhoan(
+        taikhoan=student_data.taikhoan,
+        matkhau=hash_password(student_data.matkhau),
+        quyen=student_data.quyen
+    )
     db.add(new_account)
     db.commit()
     db.refresh(new_account)
 
+    # 2. Tạo học sinh
     new_student = models.HocSinh(
-        ten_hs=student.ten_hs,
-        gioitinh_hs=student.gioitinh_hs,
-        ngaysinh_hs=student.ngaysinh_hs,
+        ten_hs=student_data.ten_hs,
+        gioitinh_hs=student_data.gioitinh_hs,
+        ngaysinh_hs=student_data.ngaysinh_hs,
         id_taikhoan=new_account.id_taikhoan
     )
-
     db.add(new_student)
-    try:
-        db.commit()
-        db.refresh(new_student)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+    db.commit()  # Có thể giữ lại commit này để đảm bảo học sinh được lưu thành công
+    db.refresh(new_student)
+
+    # 3. Tạo thông tin phụ huynh và liên kết với học sinh
+    for phu_huynh_data in student_data.phu_huynh:
+        new_parent = models.PhuHuynh(
+            ten_ph=phu_huynh_data.ten_ph,
+            gioitinh_ph=phu_huynh_data.gioitinh_ph
+        )
+        db.add(new_parent)
+        db.commit()  # Lưu phụ huynh trước khi tạo mối quan hệ
+        db.refresh(new_parent)  # Lấy ID của phụ huynh đã lưu
+
+        # 4. Tạo quan hệ giữa học sinh và phụ huynh
+        new_relation = models.PhuHuynh_HocSinh(
+            id_hs=new_student.id_hs,  # ID học sinh
+            id_ph=new_parent.id_ph,  # ID phụ huynh
+            quanhe=phu_huynh_data.quanhe
+        )
+        db.add(new_relation)
+
+    # 5. Commit cuối cùng cho các quan hệ phụ huynh
+    db.commit()
+
     return new_student
 
 
-def update_student(db: Session, student_id: int, student: schemas.HocSinhUpdate):
-    db_student = get_student_by_id(db, student_id)
+def update_student_with_parents(db: Session, student_id: int, student_data: schemas.HocSinhUpdate) -> Optional[
+    schemas.HocSinhResponse]:
+    # Tìm học sinh trong cơ sở dữ liệu
+    student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == student_id).first()
 
-    for key, value in student.dict(exclude_unset=True).items():
-        if value is not None:
-            setattr(db_student, key, value)
+    if not student:
+        return None  # Nếu học sinh không tồn tại
 
-    db.commit()
-    db.refresh(db_student)
-    return db_student
+    # Cập nhật thông tin học sinh
+    if student_data.ten_hs is not None:
+        student.ten_hs = student_data.ten_hs
+    if student_data.gioitinh_hs is not None:
+        student.gioitinh_hs = student_data.gioitinh_hs
+    if student_data.ngaysinh_hs is not None:
+        student.ngaysinh_hs = student_data.ngaysinh_hs
+
+    # Cập nhật lớp học nếu có tên lớp học
+    if student_data.lop_hoc_ten is not None:
+        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.ten_lop == student_data.lop_hoc_ten).first()
+        if lop_hoc:
+            student.id_lh = lop_hoc.id_lh
+        else:
+            raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+
+    # Lấy danh sách ID phụ huynh đã được gửi từ frontend
+    updated_parent_ids = {phu_huynh.id_ph for phu_huynh in student_data.phu_huynh if phu_huynh.id_ph}
+
+    # Xóa các phụ huynh không còn trong danh sách gửi từ frontend
+    current_relations = db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_hs == student_id).all()
+
+    for relation in current_relations:
+        if relation.id_ph not in updated_parent_ids:
+            # Xóa quan hệ giữa học sinh và phụ huynh
+            db.delete(relation)
+
+    # Cập nhật thông tin phụ huynh
+    if student_data.phu_huynh is not None:
+        for phu_huynh_data in student_data.phu_huynh:
+            if phu_huynh_data.id_ph:  # Phụ huynh đã tồn tại
+                existing_parent = db.query(models.PhuHuynh).filter(
+                    models.PhuHuynh.id_ph == phu_huynh_data.id_ph).first()
+
+                if existing_parent:
+                    # Cập nhật tên phụ huynh nếu có
+                    if phu_huynh_data.ten_ph is not None:
+                        existing_parent.ten_ph = phu_huynh_data.ten_ph
+
+                    # Cập nhật quan hệ giữa phụ huynh và học sinh
+                    existing_relation = db.query(models.PhuHuynh_HocSinh).filter(
+                        models.PhuHuynh_HocSinh.id_hs == student.id_hs,
+                        models.PhuHuynh_HocSinh.id_ph == existing_parent.id_ph
+                    ).first()
+
+                    if existing_relation and phu_huynh_data.quanhe is not None:
+                        existing_relation.quanhe = phu_huynh_data.quanhe
+
+            else:  # Thêm phụ huynh mới nếu không có ID
+                new_parent = models.PhuHuynh(
+                    ten_ph=phu_huynh_data.ten_ph,
+                    gioitinh_ph=phu_huynh_data.gioitinh_ph
+                )
+                db.add(new_parent)
+                db.commit()  # Lưu lại để có ID cho phụ huynh mới
+                db.refresh(new_parent)
+
+                # Tạo quan hệ giữa phụ huynh mới và học sinh
+                new_relation = models.PhuHuynh_HocSinh(
+                    id_hs=student.id_hs,
+                    id_ph=new_parent.id_ph,
+                    quanhe=phu_huynh_data.quanhe
+                )
+                db.add(new_relation)
+
+    db.commit()  # Lưu tất cả các thay đổi
+    db.refresh(student)  # Làm mới đối tượng học sinh để đảm bảo phản ánh thay đổi
+    return student  # Trả về đối tượng học sinh đã cập nhật
 
 
 def delete_student(db: Session, student_id: int):
-    db_student = get_student_by_id(db, student_id)
+    # Lấy thông tin học sinh
+    db_student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == student_id).first()
+
+    if db_student is None:
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại!")
+
+    # Lấy danh sách phụ huynh liên kết với học sinh này
+    parent_relations = db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_hs == student_id).all()
+    parent_ids = [relation.id_ph for relation in parent_relations]
+
+    # Xóa các quan hệ giữa phụ huynh và học sinh
+    if parent_relations:
+        db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_hs == student_id).delete(
+            synchronize_session=False)
+
+    # Xóa phụ huynh nếu không có mối quan hệ nào khác
+    if parent_ids:
+        db.query(models.PhuHuynh).filter(models.PhuHuynh.id_ph.in_(parent_ids)).delete(synchronize_session=False)
+
+    # Lấy tài khoản liên kết
     db_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.id_taikhoan == db_student.id_taikhoan).first()
 
+    # Xóa tài khoản nếu có
     if db_account:
         db.delete(db_account)
 
+    # Xóa học sinh
     db.delete(db_student)
     db.commit()
 
