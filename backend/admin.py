@@ -98,13 +98,13 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
     crud.delete_student(db, student_id)
     return {"detail": "Xóa học sinh thành công"}
 
-# # Các route API lớp học
-# @router.get("/classes", response_model=List[LopHocResponse])
-# def get_all_classes(db: Session = Depends(get_db)):
-#     classes = crud.get_all_classes(db)
-#     if not classes:
-#         raise HTTPException(status_code=404, detail="Không có lớp học nào")
-#     return classes
+# Các route API lớp học
+@router.get("/classes", response_model=List[schemas.LopHocBase])
+def get_all_classes(db: Session = Depends(get_db)):
+    classes = crud.get_all_classes(db)
+    if not classes:
+        raise HTTPException(status_code=404, detail="Không có lớp học nào")
+    return classes
 #
 #
 # @router.get("/classes/{class_id}", response_model=LopHocResponse)

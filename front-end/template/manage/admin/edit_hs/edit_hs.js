@@ -37,6 +37,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         event.preventDefault();
         await updateStudentInfo(studentId, token);
     });
+
+    // Lấy danh sách lớp học và điền vào select
+    await fetchClasses();
 });
 
 // Hàm kiểm tra quyền truy cập
@@ -103,11 +106,14 @@ function populateStudentForm(student) {
     document.getElementById('ten_hs').value = student.ten_hs;
     document.getElementById('gioitinh_hs').value = student.gioitinh_hs;
     document.getElementById('ngaysinh_hs').value = student.ngaysinh_hs;
-    document.getElementById('lop_hoc_ten').value = student.lop_hoc_ten;
+
+    // Thiết lập ID lớp học vào select
+    const classSelect = document.getElementById('lop_hoc_ten');
+    classSelect.value = student.lop_hoc_ten; // Đây là ID lớp học
 
     const parentContainer = document.getElementById("parent-container");
     student.phu_huynh.forEach(phuHuynh => {
-        const parentEntry = createParentEntry(phuHuynh.ten_ph, phuHuynh.quanhe, phuHuynh.id_ph, phuHuynh.gioitinh_ph); // Thêm ID và giới tính phụ huynh
+        const parentEntry = createParentEntry(phuHuynh.ten_ph, phuHuynh.quanhe, phuHuynh.id_ph, phuHuynh.gioitinh_ph);
         parentContainer.appendChild(parentEntry);
     });
 }
@@ -150,7 +156,7 @@ async function updateStudentInfo(studentId, token) {
     const ten_hs = document.getElementById('ten_hs').value;
     const gioitinh_hs = document.getElementById('gioitinh_hs').value;
     const ngaysinh_hs = document.getElementById('ngaysinh_hs').value;
-    const lop_hoc_ten = document.getElementById('lop_hoc_ten').value;
+    const lop_hoc_ten = document.getElementById('lop_hoc_ten').value; // Lấy ID lớp học
 
     const parentEntries = document.querySelectorAll(".parent-entry");
     const phu_huynh = [];
@@ -171,7 +177,7 @@ async function updateStudentInfo(studentId, token) {
             return;
         }
 
-        phu_huynh.push({ ten_ph: tenPh, quanhe: quanHe, id_ph: idPh, gioitinh_ph: gioiTinhPh }); // Thêm giới tính vào mảng
+        phu_huynh.push({ten_ph: tenPh, quanhe: quanHe, id_ph: idPh, gioitinh_ph: gioiTinhPh}); // Thêm giới tính vào mảng
     });
 
     console.log('Thông tin học sinh:', {
@@ -201,6 +207,31 @@ async function updateStudentInfo(studentId, token) {
     } catch (error) {
         console.error('Lỗi khi cập nhật:', error);
         alert('Có lỗi xảy ra khi cập nhật thông tin.');
+    }
+}
+
+// Hàm lấy danh sách lớp học và điền vào select
+async function fetchClasses() {
+    const apiUrlClasses = 'http://localhost:8000/admin/classes'; // Địa chỉ API lấy danh sách lớp học
+    const classSelect = document.getElementById('lop_hoc_ten');
+
+    try {
+        const response = await fetch(apiUrlClasses);
+        if (!response.ok) {
+            const errorData = await response.json(); // Lấy thông tin lỗi từ response nếu có
+            alert(errorData.detail || 'Lỗi khi lấy lớp học'); // Hiển thị thông báo lỗi
+            return; // Kết thúc hàm nếu có lỗi
+        }
+
+        const classes = await response.json();
+        classes.forEach(cls => {
+            const option = document.createElement('option');
+            option.value = cls.id_lh; // Giá trị là ID lớp học
+            option.textContent = cls.lophoc; // Hiển thị tên lớp học
+            classSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Lỗi:', error);
     }
 }
 

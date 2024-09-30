@@ -61,8 +61,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     row.innerHTML = `
                         <td>${cls.id_lh}</td>
                         <td>${cls.lophoc}</td>
-                        <td>${cls.nam_hoc || 'Chưa có năm học'}</td>
-                        <td>${cls.giao_vien.map(gv => gv.ten_gv).join(', ') || 'Chưa có giáo viên'}</td>
+                        <td>${cls.nam_hoc.namhoc || 'Chưa có năm học'}</td>
+                        <td>${cls.giao_vien ? cls.giao_vien.ten_gv : 'Chưa có giáo viên'}</td>
+                        <td>${cls.tong_so_hoc_sinh || 0}</td> <!-- Hiển thị tổng số học sinh -->
                         <td><a href="edit_lh/edit_lh.html?id=${cls.id_lh}" class="btn-edit">Chỉnh Sửa</a></td>
                         <td><button class="btn-delete" data-id="${cls.id_lh}">Xóa</button></td>
                     `;

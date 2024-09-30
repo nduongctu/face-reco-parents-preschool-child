@@ -337,13 +337,11 @@ def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate
     return new_student
 
 
-def update_student_with_parents(db: Session, student_id: int, student_data: schemas.HocSinhUpdate) -> Optional[
-    schemas.HocSinhResponse]:
-    # Tìm học sinh trong cơ sở dữ liệu
+def update_student_with_parents(db: Session, student_id: int, student_data: schemas.HocSinhUpdate) -> Optional[schemas.HocSinhResponse]:
     student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == student_id).first()
 
     if not student:
-        return None  # Nếu học sinh không tồn tại
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại")
 
     # Cập nhật thông tin học sinh
     if student_data.ten_hs is not None:
@@ -353,13 +351,15 @@ def update_student_with_parents(db: Session, student_id: int, student_data: sche
     if student_data.ngaysinh_hs is not None:
         student.ngaysinh_hs = student_data.ngaysinh_hs
 
-    # Cập nhật lớp học nếu có tên lớp học
+    # Cập nhật lớp học nếu có ID lớp học
     if student_data.lop_hoc_ten is not None:
-        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.ten_lop == student_data.lop_hoc_ten).first()
+        # Lấy ID lớp học từ student_data
+        lop_hoc_id = int(student_data.lop_hoc_ten)  # Chuyển đổi ID lớp học thành số nguyên
+        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.id_lh == lop_hoc_id).first()  # Tìm lớp học theo ID
         if lop_hoc:
-            student.id_lh = lop_hoc.id_lh
+            student.id_lh = lop_hoc.id_lh  # Cập nhật ID lớp học
         else:
-            raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
+            raise HTTPException(status_code=404, detail="Lớp học không tồn tại")  # Lớp học không tồn tại
 
     # Lấy danh sách ID phụ huynh đã được gửi từ frontend
     updated_parent_ids = {phu_huynh.id_ph for phu_huynh in student_data.phu_huynh if phu_huynh.id_ph}
@@ -369,8 +369,7 @@ def update_student_with_parents(db: Session, student_id: int, student_data: sche
 
     for relation in current_relations:
         if relation.id_ph not in updated_parent_ids:
-            # Xóa quan hệ giữa học sinh và phụ huynh
-            db.delete(relation)
+            db.delete(relation)  # Xóa quan hệ giữa học sinh và phụ huynh
 
     # Cập nhật thông tin phụ huynh
     if student_data.phu_huynh is not None:
@@ -451,10 +450,25 @@ def delete_student(db: Session, student_id: int):
 # Class CRUD Functions
 # =======================
 def get_all_classes(db: Session):
-    return db.query(models.LopHoc).options(
+    classes = db.query(models.LopHoc).options(
         joinedload(models.LopHoc.giao_vien),
-        joinedload(models.LopHoc.nam_hoc)
+        joinedload(models.LopHoc.nam_hoc),
+        joinedload(models.LopHoc.hoc_sinh)  # Tải trước học sinh
     ).all()
+
+    result = []
+    for cls in classes:
+        total_students = len(cls.hoc_sinh)  # Tính tổng số học sinh trong lớp
+        class_data = schemas.LopHocBase(
+            id_lh=cls.id_lh,
+            lophoc=cls.lophoc,
+            giao_vien=cls.giao_vien,
+            nam_hoc=cls.nam_hoc,
+            tong_so_hoc_sinh=total_students  # Gán tổng số học sinh
+        )
+        result.append(class_data)
+
+    return result
 
 
 def get_class_by_id(db: Session, class_id: int):
