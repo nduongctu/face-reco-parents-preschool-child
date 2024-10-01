@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from backend.models import TaiKhoan
 from backend.config import settings
 from sqlalchemy import create_engine
@@ -12,6 +12,7 @@ import redis
 from redlock import Redlock
 from passlib.context import CryptContext
 import logging
+from typing import Optional
 
 # Cấu hình logging
 logging.basicConfig(level=logging.INFO)
@@ -44,8 +45,10 @@ class TokenData(BaseModel):
 class UserInDB(BaseModel):
     taikhoan: str
     quyen: int
-    id_gv: int | None = None
-    id_hs: int | None = None
+    id_gv: Optional[int] = None
+    id_hs: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -68,8 +71,11 @@ def get_password_hash(password):
     return pwd_context.hash(password)
 
 
-def get_user(db: Session, taikhoan: str):
+def get_user(db: Session, taikhoan: str) -> TaiKhoan:
     user = db.query(TaiKhoan).filter(TaiKhoan.taikhoan == taikhoan).first()
+    if user is None:
+        logger.warning(f"Không tìm thấy người dùng với tài khoản: {taikhoan}")
+        return None
     logger.info(f"Đã truy xuất người dùng từ cơ sở dữ liệu: {user}")
     return user
 
@@ -77,11 +83,14 @@ def get_user(db: Session, taikhoan: str):
 def authenticate_user(db: Session, taikhoan: str, password: str):
     user = get_user(db, taikhoan)
     if not user or not verify_password(password, user.matkhau):
-        logger.warning(f"Đăng nhập thất bại cho người dùng: {taikhoan}")
         return False
-    logger.info(f"Xác thực thành công cho người dùng: {taikhoan}")
-    logger.info(f"Quyền của người dùng {taikhoan}: {user.quyen}")
-    return user
+
+    return UserInDB(
+        taikhoan=user.taikhoan,
+        quyen=user.quyen,
+        id_gv=user.giao_vien.id_gv if user.giao_vien else None,
+        id_hs=user.hoc_sinh.id_hs if user.hoc_sinh else None,
+    )
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
@@ -119,7 +128,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
         token_data = TokenData(taikhoan=taikhoan, quyen=payload.get("quyen"))
         logger.info(f"Đã tạo TokenData: {token_data}")
-        logger.info(f"Quyền trong token: {payload.get('quyen')}")
     except JWTError as e:
         logger.error(f"Lỗi giải mã JWT: {str(e)}")
         raise credentials_exception
@@ -128,7 +136,13 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         logger.warning(f"Không tìm thấy người dùng trong cơ sở dữ liệu: {token_data.taikhoan}")
         raise credentials_exception
-    return user
+
+    return UserInDB(
+        taikhoan=user.taikhoan,
+        quyen=user.quyen,
+        id_gv=user.giao_vien.id_gv if user.giao_vien else None,
+        id_hs=user.hoc_sinh.id_hs if user.hoc_sinh else None,
+    )
 
 
 @router.post("/login", response_model=Token)
@@ -166,7 +180,6 @@ async def logout(current_user: UserInDB = Depends(get_current_user)):
 @router.get("/admin")
 async def admin_only(current_user: UserInDB = Depends(get_current_user)):
     logger.info(f"Yêu cầu truy cập admin từ người dùng: {current_user.taikhoan}")
-    logger.info(f"Quyền của người dùng: {current_user.quyen}")
     if current_user.quyen != 0:
         logger.warning(f"Từ chối truy cập: Người dùng {current_user.taikhoan} không có quyền admin")
         raise HTTPException(status_code=403, detail="Không có quyền truy cập")
@@ -177,7 +190,6 @@ async def admin_only(current_user: UserInDB = Depends(get_current_user)):
 @router.get("/giaovien")
 async def giaovien_only(current_user: UserInDB = Depends(get_current_user)):
     logger.info(f"Yêu cầu truy cập giáo viên từ người dùng: {current_user.taikhoan}")
-    logger.info(f"Quyền của người dùng: {current_user.quyen}")
     if current_user.quyen != 1:
         logger.warning(f"Từ chối truy cập: Người dùng {current_user.taikhoan} không có quyền giáo viên")
         raise HTTPException(status_code=403, detail="Không có quyền truy cập")
@@ -188,7 +200,6 @@ async def giaovien_only(current_user: UserInDB = Depends(get_current_user)):
 @router.get("/user")
 async def user_only(current_user: UserInDB = Depends(get_current_user)):
     logger.info(f"Yêu cầu truy cập người dùng từ: {current_user.taikhoan}")
-    logger.info(f"Quyền của người dùng: {current_user.quyen}")
     if current_user.quyen != 2:
         logger.warning(f"Từ chối truy cập: {current_user.taikhoan} không có quyền người dùng thông thường")
         raise HTTPException(status_code=403, detail="Không có quyền truy cập")
