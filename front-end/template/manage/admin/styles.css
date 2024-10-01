@@ -299,3 +299,16 @@ tr:hover {
     max-width: 400px; /* Tùy chỉnh kích thước tối đa nếu cần */
     width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
 }
+
+.logout-button {
+    background-color: #f44336; /* Màu đỏ */
+    color: white; /* Màu chữ trắng */
+    padding: 10px 15px; /* Khoảng cách */
+    text-decoration: none; /* Bỏ gạch chân */
+    border-radius: 5px; /* Bo tròn góc */
+    margin-left: 20px; /* Khoảng cách với tên người dùng */
+}
+
+.logout-button:hover {
+    background-color: #d32f2f; /* Màu đỏ đậm khi hover */
+}
