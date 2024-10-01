@@ -84,6 +84,21 @@ class GiaoVienResponse(GiaoVienBase):
     pass
 
 
+class GiaoVienCreateResponse(BaseModel):
+    id_gv: int
+    ten_gv: str
+    gioitinh_gv: str
+    ngaysinh_gv: date
+    diachi_gv: str
+    sdt_gv: str
+    email_gv: str
+    id_taikhoan: int
+    quyen: int
+    id_lh: Optional[int] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PhuHuynhInfo(BaseModel):
     id_ph: Optional[int] = None
     ten_ph: str

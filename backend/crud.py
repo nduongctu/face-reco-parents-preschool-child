@@ -89,7 +89,7 @@ def get_teacher_by_id(db: Session, teacher_id: int) -> schemas.GiaoVienResponse:
     return teacher_data
 
 
-def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.GiaoVienResponse:
+def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.GiaoVienCreateResponse:
     # Kiểm tra xem tài khoản đã tồn tại chưa
     existing_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == teacher.taikhoan).first()
     if existing_account:
@@ -115,19 +115,19 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.Giao
         diachi_gv=teacher.diachi_gv,
         sdt_gv=teacher.sdt_gv,
         email_gv=teacher.email_gv,
-        id_taikhoan=new_account.id_taikhoan  # Gắn khóa ngoại với tài khoản
+        id_taikhoan=new_account.id_taikhoan
     )
 
-    # Thêm giáo viên vào cơ sở dữ liệu
     db.add(new_teacher)
     try:
-        db.commit()  # Lưu thay đổi
+        db.commit()
         db.refresh(new_teacher)  # Cập nhật đối tượng giáo viên với ID mới
     except Exception as e:
         db.rollback()  # Hoàn tác nếu có lỗi
-        raise HTTPException(status_code=400, detail=str(e))  # Thông báo lỗi
+        raise HTTPException(status_code=400, detail=str(e))
 
-    return schemas.GiaoVienResponse(
+    # Trả về phản hồi với đúng schema
+    return schemas.GiaoVienCreateResponse(
         id_gv=new_teacher.id_gv,
         ten_gv=new_teacher.ten_gv,
         gioitinh_gv=new_teacher.gioitinh_gv,
@@ -135,9 +135,9 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.Giao
         diachi_gv=new_teacher.diachi_gv,
         sdt_gv=new_teacher.sdt_gv,
         email_gv=new_teacher.email_gv,
-        tai_khoan_quyen=new_account.quyen,
-        lop_hoc_ten=[],  # Có thể cập nhật sau
-        id_taikhoan=new_account.id_taikhoan
+        quyen=new_account.quyen,
+        id_taikhoan=new_account.id_taikhoan,
+        id_lh=None
     )
 
 
@@ -237,10 +237,11 @@ def delete_teacher(db: Session, teacher_id: int):
 
     db.commit()
 
+    # =======================
+    # Student CRUD Functions
+    # =======================
 
-# =======================
-# Student CRUD Functions
-# =======================
+
 def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
     students = db.query(models.HocSinh).options(
         joinedload(models.HocSinh.tai_khoan),
@@ -478,10 +479,11 @@ def delete_student(db: Session, student_id: int):
     db.delete(db_student)
     db.commit()
 
+    # =======================
+    # Class CRUD Functions
+    # =======================
 
-# =======================
-# Class CRUD Functions
-# =======================
+
 def get_all_classes(db: Session):
     classes = db.query(models.LopHoc).options(
         joinedload(models.LopHoc.giao_viens),
@@ -601,10 +603,11 @@ def delete_class(db: Session, class_id: int):
     db.delete(db_class)  # Xóa lớp học
     db.commit()  # Lưu thay đổi
 
+    # =======================
+    # Academic Year CRUD Functions
+    # =======================
 
-# =======================
-# Academic Year CRUD Functions
-# =======================
+
 def get_academic_years(db: Session):
     academic_years = db.query(models.NamHoc).all()
     if not academic_years:
@@ -650,10 +653,11 @@ def delete_academic_year(db: Session, year_id: int):
     db.commit()
     return {"detail": "Xóa năm học thành công"}
 
+    # =======================
+    # Parent CRUD Functions
+    # =======================
 
-# =======================
-# Parent CRUD Functions
-# =======================
+
 def get_all_parents(db: Session):
     return db.query(models.PhuHuynh).all()
 
@@ -694,10 +698,11 @@ def delete_parent(db: Session, parent_id: int):
     db.delete(db_parent)
     db.commit()
 
+    # =======================
+    # Account CRUD Functions
+    # =======================
 
-# =======================
-# Account CRUD Functions
-# =======================
+
 def get_all_accounts(db: Session):
     return db.query(models.TaiKhoan).all()
 
