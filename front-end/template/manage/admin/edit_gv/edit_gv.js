@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!response.ok) {
                 const errorData = await response.json();
                 alert(errorData.detail || 'Không thể tải thông tin giáo viên.');
-                window.location.href = 'ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu có lỗi
+                window.location.href = '../ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu có lỗi
                 return null;
             }
 
@@ -76,18 +76,39 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     };
 
+    // Tải danh sách lớp học
+    const fetchClasses = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/admin/classes', {
+                method: 'GET',
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                alert(errorData.detail || 'Không thể tải danh sách lớp học.');
+                return [];
+            }
+
+            return await response.json(); // Giả sử API trả về danh sách lớp học
+        } catch (error) {
+            console.error('Error fetching classes:', error);
+            alert('Có lỗi xảy ra khi tải danh sách lớp học.');
+            return [];
+        }
+    };
+
     // Hiển thị thông tin giáo viên vào biểu mẫu
     const displayTeacherInfo = (teacher) => {
         document.getElementById('ma_gv').value = teacher.id_gv;
         document.getElementById('ten_gv').value = teacher.ten_gv;
         document.getElementById('gioitinh_gv').value = teacher.gioitinh_gv;
-        document.getElementById('ngaysinh_gv').value = teacher.ngaysinh_gv; // Định dạng yyyy-mm-dd
+        document.getElementById('ngaysinh_gv').value = teacher.ngaysinh_gv.split('T')[0]; // Định dạng yyyy-mm-dd
         document.getElementById('sdt_gv').value = teacher.sdt_gv;
         document.getElementById('diachi_gv').value = teacher.diachi_gv;
         document.getElementById('email_gv').value = teacher.email_gv;
-
-        // Thêm giá trị quyền vào dropdown
         document.getElementById('quyen').value = teacher.quyen !== undefined ? teacher.quyen : '1'; // Giáo viên mặc định
+        document.getElementById('lop_hoc').value = teacher.id_lh; // Đặt lớp học đã chọn
     };
 
     // Gửi yêu cầu cập nhật thông tin giáo viên
@@ -121,7 +142,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const teacherId = getTeacherId();
     if (!teacherId) {
         alert('ID giáo viên không hợp lệ!');
-        window.location.href = 'ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu không có ID
+        window.location.href = '../ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu không có ID
         return;
     }
 
@@ -129,6 +150,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (teacher) {
         displayTeacherInfo(teacher);
     }
+
+    // Tải danh sách lớp học và điền vào dropdown
+    const classes = await fetchClasses();
+    const classSelect = document.getElementById('lop_hoc');
+    classes.forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls.id_lh; // ID lớp học
+        option.textContent = cls.lophoc; // Tên lớp học
+        classSelect.appendChild(option);
+    });
 
     // Xử lý sự kiện gửi biểu mẫu
     document.getElementById('edit-teacher-form').addEventListener('submit', function (event) {
@@ -142,7 +173,8 @@ document.addEventListener('DOMContentLoaded', async function () {
             sdt_gv: document.getElementById('sdt_gv').value,
             diachi_gv: document.getElementById('diachi_gv').value,
             email_gv: document.getElementById('email_gv').value,
-            quyen: parseInt(document.getElementById('quyen').value, 10)
+            quyen: parseInt(document.getElementById('quyen').value, 10),
+            id_lh: document.getElementById('lop_hoc').value // Thêm ID lớp học vào dữ liệu
         };
 
         // Kiểm tra độ dài số điện thoại trước khi gửi

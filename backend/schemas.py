@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, conint, ConfigDict
+from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
 from datetime import date
 
@@ -34,9 +34,10 @@ class GiaoVienBase(BaseModel):
     diachi_gv: str
     sdt_gv: str
     email_gv: str
-    tai_khoan_quyen: Optional[int] = None
-    lop_hoc_ten: Optional[List[str]] = None
-    id_taikhoan: Optional[int] = None
+    tai_khoan_quyen: Optional[int] = None  # Quyền từ tài khoản
+    id_taikhoan: Optional[int] = None  # ID tài khoản
+    id_lh: Optional[int]  # Có thể không có lớp học
+    lop_hoc_ten: Optional[str] = None  # Tên lớp học
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -44,9 +45,9 @@ class GiaoVienBase(BaseModel):
 class LopHocBase(BaseModel):
     id_lh: int
     lophoc: str
-    giao_vien: Optional[GiaoVienBase] = None
-    nam_hoc: Optional[NamHocBase] = None
-    tong_so_hoc_sinh: Optional[int] = None
+    giao_vien: List[GiaoVienBase] = None  # Giáo viên dạy lớp học
+    nam_hoc: Optional[NamHocBase] = None  # Năm học
+    tong_so_hoc_sinh: Optional[int] = None  # Tổng số học sinh trong lớp
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -58,9 +59,9 @@ class GiaoVienCreate(BaseModel):
     sdt_gv: str
     diachi_gv: str
     email_gv: str
-    taikhoan: str
-    matkhau: str
-    quyen: int
+    taikhoan: str  # Tài khoản
+    matkhau: str  # Mật khẩu
+    quyen: int  # Quyền
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -73,8 +74,8 @@ class GiaoVienUpdate(BaseModel):
     diachi_gv: Optional[str] = None
     sdt_gv: Optional[str] = None
     email_gv: Optional[str] = None
-    quyen: Optional[int] = None
-    lop_hoc_ten: Optional[List[str]] = None
+    quyen: Optional[int] = None  # Cập nhật quyền
+    id_lh: Optional[int]  # Thêm trường id_lh vào đây
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -95,9 +96,9 @@ class HocSinhBase(BaseModel):
     ten_hs: str
     gioitinh_hs: str
     ngaysinh_hs: date
-    lop_hoc_ten: Optional[str] = None
+    lop_hoc_ten: Optional[str] = None  # Tên lớp học
     phu_huynh: Optional[List[PhuHuynhInfo]] = None
-    id_taikhoan: Optional[int] = None
+    id_taikhoan: Optional[int] = None  # ID tài khoản
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -120,16 +121,17 @@ class HocSinhResponse(HocSinhBase):
 
 class LopHocCreate(BaseModel):
     lophoc: str
-    ten_gv: Optional[str] = None
-    namhoc: str
+    id_nh: int  # ID năm học
+    id_gv: List[int] = None  # ID giáo viên
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class LopHocUpdate(BaseModel):
+    id_lh: int  # ID lớp học, cần thiết để cập nhật
     lophoc: Optional[str] = None
-    ten_gv: Optional[str] = None
-    namhoc: Optional[str] = None
+    id_nh: Optional[int] = None
+    id_gv: Optional[List[int]] = None  # Danh sách ID giáo viên
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -164,7 +166,7 @@ class HocSinhUpdate(BaseModel):
     ten_hs: Optional[str] = None
     gioitinh_hs: Optional[str] = None
     ngaysinh_hs: Optional[date] = None
-    lop_hoc_ten: Optional[str]
+    lop_hoc_ten: Optional[str] = None
     phu_huynh: Optional[List[PhuHuynhUpdate]] = []  # Thay đổi đây để có thể thêm phụ huynh
 
     model_config = ConfigDict(from_attributes=True)
@@ -195,7 +197,7 @@ class TaiKhoanResponse(TaiKhoanBase):
 
 
 class NamHocCreate(BaseModel):
-    namhoc: str
+    namhoc: str  # Cần có trường này để tạo mới
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -207,7 +209,9 @@ class NamHocUpdate(BaseModel):
 
 
 class NamHocResponse(NamHocBase):
-    pass
+    id_nh: int
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Cập nhật các forward references cho các mô hình Pydantic

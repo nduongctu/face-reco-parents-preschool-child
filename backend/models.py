@@ -18,31 +18,27 @@ class GiaoVien(Base):
     ngaysinh_gv = Column(Date, nullable=False)
     diachi_gv = Column(String(200), nullable=False)
     sdt_gv = Column(String(20), nullable=False)
-    email_gv = Column(String(20), nullable=False)
+    email_gv = Column(String(100), nullable=False)
     id_taikhoan = Column(Integer, ForeignKey('TaiKhoan.id_taikhoan'), nullable=False)
+    id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'))  # Thêm khóa ngoại đến LopHoc
 
     tai_khoan = relationship("TaiKhoan", back_populates="giao_vien")
-    lop_hocs = relationship("LopHoc", back_populates="giao_vien")
+    lop_hoc = relationship("LopHoc", back_populates="giao_viens")  # Quan hệ nhiều giáo viên
 
 
 # Mô hình HocSinh
 class HocSinh(Base):
     __tablename__ = 'HocSinh'
 
-    id_hs = Column(Integer, primary_key=True, index=True,autoincrement=True)
+    id_hs = Column(Integer, primary_key=True, index=True, autoincrement=True)
     ten_hs = Column(String(100), nullable=False)
     gioitinh_hs = Column(String(10), nullable=False)
     ngaysinh_hs = Column(Date, nullable=False)
     id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'))
     id_taikhoan = Column(Integer, ForeignKey('TaiKhoan.id_taikhoan'))
 
-    # Relationship with LopHoc table
-    lop_hoc = relationship("LopHoc", back_populates="hoc_sinh")
-
-    # Relationship with TaiKhoan table
+    lop_hoc = relationship("LopHoc", back_populates="hoc_sinhs")
     tai_khoan = relationship("TaiKhoan", back_populates="hoc_sinh")
-
-    # Relationship with PhuHuynh_HocSinh table
     phu_huynhs = relationship("PhuHuynh_HocSinh", back_populates="hoc_sinh")
 
 
@@ -63,19 +59,18 @@ class LopHoc(Base):
 
     id_lh = Column(Integer, primary_key=True, index=True)
     lophoc = Column(String(80), nullable=False)
-    id_gv = Column(Integer, ForeignKey('GiaoVien.id_gv'))
     id_nh = Column(Integer, ForeignKey('NamHoc.id_nh'))
 
-    giao_vien = relationship("GiaoVien", back_populates="lop_hocs")
+    giao_viens = relationship("GiaoVien", back_populates="lop_hoc")  # Một lớp có nhiều giáo viên
+    hoc_sinhs = relationship("HocSinh", back_populates="lop_hoc")  # Một lớp có nhiều học sinh
     nam_hoc = relationship("NamHoc", back_populates="lop_hocs")
-    hoc_sinh = relationship("HocSinh", back_populates="lop_hoc")
 
 
 # Mô hình PhuHuynh
 class PhuHuynh(Base):
     __tablename__ = 'PhuHuynh'
 
-    id_ph = Column(Integer, primary_key=True, index=True,autoincrement=True)
+    id_ph = Column(Integer, primary_key=True, index=True, autoincrement=True)
     ten_ph = Column(String(100), nullable=False)
     gioitinh_ph = Column(String(5), nullable=False)
     ngaysinh_ph = Column(Date, nullable=True)

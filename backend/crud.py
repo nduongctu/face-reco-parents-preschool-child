@@ -18,7 +18,7 @@ def get_all_teachers(db: Session) -> List[schemas.GiaoVienResponse]:
     # Query bảng GiaoVien và join với TaiKhoan và LopHoc
     teachers = db.query(models.GiaoVien).options(
         joinedload(models.GiaoVien.tai_khoan),  # Load thông tin tài khoản
-        joinedload(models.GiaoVien.lop_hocs)  # Load thông tin lớp học
+        joinedload(models.GiaoVien.lop_hoc)  # Load thông tin lớp học
     ).all()
 
     # Xử lý dữ liệu và chuyển đổi thành mô hình Pydantic
@@ -27,8 +27,8 @@ def get_all_teachers(db: Session) -> List[schemas.GiaoVienResponse]:
         # Lấy quyền tài khoản từ bảng TaiKhoan (nếu có)
         tai_khoan_quyen = teacher.tai_khoan.quyen if teacher.tai_khoan else None
 
-        # Lấy danh sách tên lớp học từ bảng LopHoc (nếu có)
-        lop_hoc_ten = [lop.lophoc for lop in teacher.lop_hocs] if teacher.lop_hocs else []
+        # Lấy tên lớp học từ bảng LopHoc
+        lop_hoc_ten = teacher.lop_hoc.lophoc if teacher.lop_hoc else None
 
         # Lấy id_taikhoan từ bảng TaiKhoan (nếu có)
         id_taikhoan = teacher.tai_khoan.id_taikhoan if teacher.tai_khoan else None
@@ -43,8 +43,9 @@ def get_all_teachers(db: Session) -> List[schemas.GiaoVienResponse]:
             sdt_gv=teacher.sdt_gv,
             email_gv=teacher.email_gv,
             tai_khoan_quyen=tai_khoan_quyen,
-            lop_hoc_ten=lop_hoc_ten,
-            id_taikhoan=id_taikhoan
+            lop_hoc_ten=lop_hoc_ten,  # Thêm tên lớp học
+            id_taikhoan=id_taikhoan,
+            id_lh=teacher.id_lh  # Nếu bạn vẫn muốn giữ id_lh
         )
 
         result.append(teacher_data)
@@ -53,24 +54,22 @@ def get_all_teachers(db: Session) -> List[schemas.GiaoVienResponse]:
 
 
 def get_teacher_by_id(db: Session, teacher_id: int) -> schemas.GiaoVienResponse:
-    # Truy vấn giáo viên theo ID
+    # Truy vấn giáo viên theo ID và join với bảng TaiKhoan
     teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == teacher_id).options(
-        joinedload(models.GiaoVien.tai_khoan),
-        joinedload(models.GiaoVien.lop_hocs)
+        joinedload(models.GiaoVien.tai_khoan)
     ).first()
 
     # Kiểm tra nếu không tìm thấy giáo viên
     if teacher is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy giáo viên")
 
-    # Lấy thông tin quyền tài khoản từ bảng TaiKhoan
+    # Lấy quyền tài khoản từ bảng TaiKhoan (nếu có)
     tai_khoan_quyen = teacher.tai_khoan.quyen if teacher.tai_khoan else None
-
-    # Lấy danh sách tên lớp học từ bảng LopHoc
-    lop_hoc_ten = [lop.lophoc for lop in teacher.lop_hocs] if teacher.lop_hocs else []
-
-    # Lấy id_taikhoan từ bảng TaiKhoan
     id_taikhoan = teacher.tai_khoan.id_taikhoan if teacher.tai_khoan else None
+
+    # Lấy tên lớp học từ id_lh
+    lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.id_lh == teacher.id_lh).first()
+    lop_hoc_ten = lop_hoc.lophoc if lop_hoc else None  # Nếu không tìm thấy lớp thì None
 
     # Tạo đối tượng GiaoVienResponse từ dữ liệu đã xử lý
     teacher_data = schemas.GiaoVienResponse(
@@ -82,14 +81,15 @@ def get_teacher_by_id(db: Session, teacher_id: int) -> schemas.GiaoVienResponse:
         sdt_gv=teacher.sdt_gv,
         email_gv=teacher.email_gv,
         tai_khoan_quyen=tai_khoan_quyen,
-        lop_hoc_ten=lop_hoc_ten,
-        id_taikhoan=id_taikhoan
+        lop_hoc_ten=lop_hoc_ten,  # Thêm tên lớp học
+        id_taikhoan=id_taikhoan,
+        id_lh=teacher.id_lh  # Giữ nguyên id_lh
     )
 
     return teacher_data
 
 
-def create_teacher(db: Session, teacher: schemas.GiaoVienCreate):
+def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.GiaoVienResponse:
     # Kiểm tra xem tài khoản đã tồn tại chưa
     existing_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == teacher.taikhoan).first()
     if existing_account:
@@ -148,10 +148,17 @@ def update_teacher(db: Session, teacher_id: int, teacher: schemas.GiaoVienUpdate
     if not db_teacher:
         raise HTTPException(status_code=404, detail="Giáo viên không tồn tại.")
 
+    # Hiển thị thông tin hiện tại
+    print(f"Thông tin giáo viên trước khi cập nhật: {db_teacher}")
+
     # Cập nhật thông tin giáo viên từ thông tin nhận được
+    updated_fields = []  # Danh sách các trường đã được cập nhật
+
+    # Cập nhật các thông tin cơ bản
     for key, value in teacher.dict(exclude={"quyen", "lop_hoc_ten"}).items():
-        if value is not None:
+        if value is not None and getattr(db_teacher, key) != value:
             setattr(db_teacher, key, value)
+            updated_fields.append(key)  # Ghi nhận trường đã được cập nhật
 
     # Khởi tạo db_account với giá trị None
     db_account = None
@@ -166,13 +173,31 @@ def update_teacher(db: Session, teacher_id: int, teacher: schemas.GiaoVienUpdate
             raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản tương ứng.")
 
         # Cập nhật quyền tài khoản
-        db_account.quyen = teacher.quyen
+        if db_account.quyen != teacher.quyen:
+            db_account.quyen = teacher.quyen
+            updated_fields.append("quyen")  # Ghi nhận trường quyền đã được cập nhật
 
-    # Lưu thay đổi vào cơ sở dữ liệu
-    db.commit()
+    # Cập nhật lớp học nếu có
+    if teacher.id_lh is not None:
+        # Kiểm tra xem lớp học có tồn tại trong cơ sở dữ liệu không
+        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.id_lh == teacher.id_lh).first()
+
+        if lop_hoc:
+            db_teacher.id_lh = teacher.id_lh  # Cập nhật ID lớp học cho giáo viên
+            updated_fields.append("id_lh")  # Ghi nhận trường id_lh đã được cập nhật
+        else:
+            raise HTTPException(status_code=404, detail="Lớp học không tồn tại.")
+
+    # Kiểm tra có trường nào được cập nhật không
+    if updated_fields:
+        # Lưu thay đổi vào cơ sở dữ liệu
+        db.commit()
+        print(f"Các trường đã được cập nhật: {updated_fields}")
+    else:
+        print("Không có trường nào được cập nhật.")
 
     # Chuyển đổi đối tượng giáo viên thành dạng dữ liệu trả về
-    teacher_data = schemas.GiaoVienResponse(  # Đảm bảo bạn sử dụng GiaoVienResponse
+    teacher_data = schemas.GiaoVienResponse(
         id_gv=db_teacher.id_gv,
         ten_gv=db_teacher.ten_gv,
         gioitinh_gv=db_teacher.gioitinh_gv,
@@ -181,9 +206,16 @@ def update_teacher(db: Session, teacher_id: int, teacher: schemas.GiaoVienUpdate
         sdt_gv=db_teacher.sdt_gv,
         email_gv=db_teacher.email_gv,
         tai_khoan_quyen=db_account.quyen if db_account else None,
-        lop_hoc_ten=[],  # Có thể cập nhật danh sách lớp học nếu cần
-        id_taikhoan=db_teacher.id_taikhoan
+        id_taikhoan=db_teacher.id_taikhoan,
+        id_lh=db_teacher.id_lh  # Đảm bảo ID lớp học được đưa vào
     )
+
+    # Lấy tên lớp học từ ID lớp học
+    if db_teacher.id_lh is not None:
+        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.id_lh == db_teacher.id_lh).first()
+        teacher_data.lop_hoc_ten = lop_hoc.lophoc if lop_hoc else None  # Lấy tên lớp học nếu có
+    else:
+        teacher_data.lop_hoc_ten = None  # Nếu không có ID lớp học, set thành None
 
     return teacher_data
 
@@ -337,7 +369,8 @@ def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate
     return new_student
 
 
-def update_student_with_parents(db: Session, student_id: int, student_data: schemas.HocSinhUpdate) -> Optional[schemas.HocSinhResponse]:
+def update_student_with_parents(db: Session, student_id: int, student_data: schemas.HocSinhUpdate) -> Optional[
+    schemas.HocSinhResponse]:
     student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == student_id).first()
 
     if not student:
@@ -451,18 +484,18 @@ def delete_student(db: Session, student_id: int):
 # =======================
 def get_all_classes(db: Session):
     classes = db.query(models.LopHoc).options(
-        joinedload(models.LopHoc.giao_vien),
+        joinedload(models.LopHoc.giao_viens),
         joinedload(models.LopHoc.nam_hoc),
-        joinedload(models.LopHoc.hoc_sinh)  # Tải trước học sinh
+        joinedload(models.LopHoc.hoc_sinhs)  # Tải trước học sinh
     ).all()
 
     result = []
     for cls in classes:
-        total_students = len(cls.hoc_sinh)  # Tính tổng số học sinh trong lớp
+        total_students = len(cls.hoc_sinhs)  # Tính tổng số học sinh trong lớp
         class_data = schemas.LopHocBase(
             id_lh=cls.id_lh,
             lophoc=cls.lophoc,
-            giao_vien=cls.giao_vien,
+            giao_vien=[gv for gv in cls.giao_viens],  # Danh sách giáo viên
             nam_hoc=cls.nam_hoc,
             tong_so_hoc_sinh=total_students  # Gán tổng số học sinh
         )
@@ -471,60 +504,102 @@ def get_all_classes(db: Session):
     return result
 
 
-def get_class_by_id(db: Session, class_id: int):
+def get_class_by_id(db: Session, id_lh: int):
+    # Tải lớp học cùng với các thực thể liên quan
     cls = db.query(models.LopHoc).options(
-        joinedload(models.LopHoc.giao_vien),
-        joinedload(models.LopHoc.nam_hoc)
-    ).filter(models.LopHoc.id_lh == class_id).first()
+        joinedload(models.LopHoc.giao_viens),
+        joinedload(models.LopHoc.nam_hoc),
+        joinedload(models.LopHoc.hoc_sinhs)  # Tải trước học sinh
+    ).filter(models.LopHoc.id_lh == id_lh).first()
+
+    # Trả về None nếu không tìm thấy lớp học
     if cls is None:
-        raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
-    return cls
+        return None
+
+    # Tính tổng số học sinh trong lớp
+    total_students = len(cls.hoc_sinhs)
+
+    # Tạo đối tượng LopHocBase với thông tin của lớp học
+    class_data = schemas.LopHocBase(
+        id_lh=cls.id_lh,
+        lophoc=cls.lophoc,
+        giao_vien=[gv for gv in cls.giao_viens],  # Danh sách giáo viên
+        nam_hoc=cls.nam_hoc,
+        tong_so_hoc_sinh=total_students  # Tổng số học sinh
+    )
+
+    return class_data
 
 
 def create_class(db: Session, class_: schemas.LopHocCreate):
-    # Tìm giáo viên dựa trên tên (nếu được cung cấp)
-    giao_vien = None
-    if class_.ten_gv:
-        giao_vien = db.query(models.GiaoVien).filter(models.GiaoVien.ten_gv == class_.ten_gv).first()
-        if not giao_vien:
-            raise HTTPException(status_code=404, detail="Không tìm thấy giáo viên")
-
-    # Tìm năm học
-    nam_hoc = db.query(models.NamHoc).filter(models.NamHoc.namhoc == class_.namhoc).first()
-    if not nam_hoc:
-        raise HTTPException(status_code=404, detail="Không tìm thấy năm học")
-
     new_class = models.LopHoc(
         lophoc=class_.lophoc,
-        giao_vien=giao_vien,
-        nam_hoc=nam_hoc
+        id_nh=class_.id_nh
     )
+
+    if class_.id_gv:  # Nếu có danh sách ID giáo viên
+        for id_gv in class_.id_gv:
+            # Truy vấn giáo viên từ cơ sở dữ liệu
+            gv = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == id_gv).first()
+            if gv:
+                new_class.giao_viens.append(gv)  # Thêm giáo viên vào lớp
+
+    # Thêm lớp học vào cơ sở dữ liệu
     db.add(new_class)
-    try:
-        db.commit()
-        db.refresh(new_class)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-    return new_class
+    db.commit()
+    db.refresh(new_class)
+
+    return schemas.LopHocResponse.from_orm(new_class)
 
 
-def update_class(db: Session, class_id: int, class_: schemas.LopHocUpdate):
-    db_class = get_class_by_id(db, class_id)
+def update_class(db: Session, class_id: int, class_data: schemas.LopHocUpdate):
+    # Lấy lớp học từ cơ sở dữ liệu dựa trên `class_id`
+    db_class = db.query(models.LopHoc).filter(models.LopHoc.id_lh == class_id).first()
 
-    for key, value in class_.dict(exclude_unset=True).items():
-        if value is not None:
-            setattr(db_class, key, value)
+    if not db_class:
+        raise HTTPException(status_code=404, detail="Class not found")
+
+    # Cập nhật tên lớp học nếu có trong dữ liệu gửi lên
+    if class_data.lophoc is not None:
+        db_class.lophoc = class_data.lophoc
+
+    # Cập nhật năm học nếu có trong dữ liệu gửi lên
+    if class_data.id_nh is not None:
+        db_class.id_nh = class_data.id_nh
+
+    # Cập nhật id_lh từ payload
+    if class_data.id_lh is not None:
+        db_class.id_lh = class_data.id_lh
+
+    # Nếu có danh sách giáo viên gửi lên
+    if class_data.id_gv is not None:
+        current_teachers = {gv.id_gv for gv in db_class.giao_viens}
+
+        for gv_id in class_data.id_gv:
+            if gv_id not in current_teachers:
+                teacher = db.query(models.GiaoVien).filter(models.GiaoVien.id_gv == gv_id).first()
+                if teacher:
+                    db_class.giao_viens.append(teacher)
+
+        for teacher in db_class.giao_viens:
+            if teacher.id_gv not in set(class_data.id_gv):
+                db_class.giao_viens.remove(teacher)
 
     db.commit()
     db.refresh(db_class)
-    return db_class
+
+    return schemas.LopHocUpdate.from_orm(db_class)
 
 
 def delete_class(db: Session, class_id: int):
-    db_class = get_class_by_id(db, class_id)
-    db.delete(db_class)
-    db.commit()
+    # Lấy lớp học từ cơ sở dữ liệu
+    db_class = db.query(models.LopHoc).filter(models.LopHoc.id_lh == class_id).first()
+
+    if db_class is None:
+        raise HTTPException(status_code=404, detail="Lớp học không tồn tại.")
+
+    db.delete(db_class)  # Xóa lớp học
+    db.commit()  # Lưu thay đổi
 
 
 # =======================
@@ -540,30 +615,40 @@ def get_academic_years(db: Session):
 def get_academic_year_by_id(db: Session, year_id: int):
     academic_year = db.query(models.NamHoc).filter(models.NamHoc.id_nh == year_id).first()
     if not academic_year:
-        raise HTTPException(status_code=404, detail="Không tìm thấy năm học")
+        raise HTTPException(status_code=404, detail="Không tìm thấy năm học với ID này")
     return academic_year
 
 
-def create_academic_year(db: Session, year_data: schemas.NamHocCreate):
-    new_year = models.NamHoc(namhoc=year_data.namhoc)
-    db.add(new_year)
+def create_academic_year(db: Session, year: schemas.NamHocCreate):
+    db_year = models.NamHoc(namhoc=year.namhoc)
+    db.add(db_year)
     db.commit()
-    db.refresh(new_year)
-    return new_year
+    db.refresh(db_year)
+    return db_year
 
 
 def update_academic_year(db: Session, year_id: int, year_data: schemas.NamHocUpdate):
-    academic_year = get_academic_year_by_id(db, year_id)
-    academic_year.namhoc = year_data.namhoc
+    academic_year = db.query(models.NamHoc).filter(models.NamHoc.id_nh == year_id).first()
+
+    if not academic_year:
+        raise HTTPException(status_code=404, detail="Năm học không tồn tại")
+
+    if year_data.namhoc is not None:
+        academic_year.namhoc = year_data.namhoc
+
     db.commit()
     db.refresh(academic_year)
     return academic_year
 
 
 def delete_academic_year(db: Session, year_id: int):
-    academic_year = get_academic_year_by_id(db, year_id)
-    db.delete(academic_year)
+    db_academic_year = db.query(models.NamHoc).filter(models.NamHoc.id_nh == year_id).first()
+    if not db_academic_year:
+        raise HTTPException(status_code=404, detail="Không tìm thấy năm học")
+
+    db.delete(db_academic_year)
     db.commit()
+    return {"detail": "Xóa năm học thành công"}
 
 
 # =======================

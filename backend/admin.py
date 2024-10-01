@@ -98,6 +98,7 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
     crud.delete_student(db, student_id)
     return {"detail": "Xóa học sinh thành công"}
 
+
 # Các route API lớp học
 @router.get("/classes", response_model=List[schemas.LopHocBase])
 def get_all_classes(db: Session = Depends(get_db)):
@@ -105,73 +106,60 @@ def get_all_classes(db: Session = Depends(get_db)):
     if not classes:
         raise HTTPException(status_code=404, detail="Không có lớp học nào")
     return classes
-#
-#
-# @router.get("/classes/{class_id}", response_model=LopHocResponse)
-# def get_class_by_id(class_id: int, db: Session = Depends(get_db)):
-#     cls = crud.get_class_by_id(db, class_id)
-#     if not cls:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
-#
-#     # Giả sử bạn lấy danh sách giáo viên từ lớp học
-#     teachers = db.query(models.GiaoVien).filter(models.GiaoVien.id_lh == class_id).all()
-#
-#     return LopHocResponse.from_orm(cls, giao_vien=[GiaoVienResponse.from_orm(t) for t in teachers])
-#
-#
-# @router.post("/classes", response_model=LopHocResponse)
-# def create_class(class_data: LopHocCreate, db: Session = Depends(get_db)):
-#     return crud.create_class(db, class_data)
-#
-#
-# @router.put("/classes/{class_id}", response_model=LopHocResponse)
-# def update_class(class_id: int, class_: LopHocUpdate, db: Session = Depends(get_db)):
-#     db_class = crud.update_class(db, class_id, class_)
-#     if db_class is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
-#     return db_class
-#
-#
-# @router.delete("/classes/{class_id}", response_model=dict)
-# def delete_class(class_id: int, db: Session = Depends(get_db)):
-#     crud.delete_class(db, class_id)
-#     return {"detail": "Xóa lớp học thành công"}
-#
-#
-# # Các route API năm học
-# @router.get("/years", response_model=List[NamHocResponse])
-# def get_all_academic_years(db: Session = Depends(get_db)):
-#     academic_years = crud.get_academic_years(db)
-#     return [NamHocResponse.from_orm(year) for year in academic_years]
-#
-#
-# @router.get("/years/{year_id}", response_model=NamHocResponse)
-# def get_academic_year_by_id(year_id: int, db: Session = Depends(get_db)):
-#     academic_year = crud.get_academic_year_by_id(db, year_id)
-#     if not academic_year:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy năm học")
-#     return NamHocResponse.from_orm(academic_year)
-#
-#
-# @router.post("/years", response_model=NamHocResponse)
-# def create_academic_year(year_data: NamHocCreate, db: Session = Depends(get_db)):
-#     return NamHocResponse.from_orm(crud.create_academic_year(db, year_data))
-#
-#
-# @router.put("/years/{year_id}", response_model=NamHocResponse)
-# def update_academic_year(year_id: int, year_data: NamHocUpdate, db: Session = Depends(get_db)):
-#     db_year = crud.update_academic_year(db, year_id, year_data)
-#     if db_year is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy năm học")
-#     return NamHocResponse.from_orm(db_year)
-#
-#
-# @router.delete("/years/{year_id}", response_model=dict)
-# def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
-#     crud.delete_academic_year(db, year_id)
-#     return {"detail": "Xóa năm học thành công"}
-#
-#
+
+
+@router.get("/classes/{class_id}", response_model=schemas.LopHocResponse)
+def get_class_by_id(class_id: int, db: Session = Depends(get_db)):
+    cls = crud.get_class_by_id(db, class_id)
+    if not cls:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lớp học")
+
+    return cls  # Trả về thông tin lớp học đã lấy từ CRUD
+
+
+@router.post("/classes/", response_model=schemas.LopHocResponse)
+def create_class_endpoint(class_data: schemas.LopHocCreate, db: Session = Depends(get_db)):
+    new_class = crud.create_class(db=db, class_=class_data)
+    return new_class
+
+
+@router.put("/classes/{class_id}", response_model=schemas.LopHocResponse)
+def update_class_endpoint(class_id: int, class_data: schemas.LopHocUpdate, db: Session = Depends(get_db)):
+    return crud.update_class(db, class_id, class_data)
+
+
+@router.delete("/classes/{class_id}", response_model=dict)
+def delete_class(class_id: int, db: Session = Depends(get_db)):
+    crud.delete_class(db, class_id)
+    return {"detail": "Xóa lớp học thành công"}
+
+
+# Các route API năm học
+@router.get("/years", response_model=List[schemas.NamHocResponse])
+def get_all_academic_years(db: Session = Depends(get_db)):
+    academic_years = crud.get_academic_years(db)
+    return [schemas.NamHocResponse.from_orm(year) for year in academic_years]
+
+
+@router.get("/years/{year_id}", response_model=schemas.NamHocBase)
+def read_academic_year_by_id(year_id: int, db: Session = Depends(get_db)):
+    return crud.get_academic_year_by_id(db, year_id)
+
+
+@router.post("/years/", response_model=schemas.NamHocBase)
+def create_academic_year(year: schemas.NamHocCreate, db: Session = Depends(get_db)):
+    return crud.create_academic_year(db, year)
+
+
+@router.put("/years/{year_id}", response_model=schemas.NamHocBase)
+def update_academic_year(year_id: int, year_data: schemas.NamHocUpdate, db: Session = Depends(get_db)):
+    return crud.update_academic_year(db, year_id, year_data)
+
+
+@router.delete("/years/{year_id}")
+def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
+    return crud.delete_academic_year(db, year_id)
+
 # # Các route API phụ huynh
 # @router.get("/parents", response_model=List[PhuHuynhResponse])
 # def get_all_parents(db: Session = Depends(get_db)):

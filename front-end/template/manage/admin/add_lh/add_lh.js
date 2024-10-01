@@ -72,7 +72,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const nam_hoc = document.getElementById('nam_hoc').value;  // Lấy giá trị năm học
         const giaovien_lop = document.getElementById('giaovien_lop').value;  // Lấy giá trị giáo viên
 
-        fetch('http://localhost:8000/admin/classes', {
+        // Kiểm tra giá trị có hợp lệ không
+        if (!ten_lop || !nam_hoc || !giaovien_lop) {
+            alert('Vui lòng điền đầy đủ thông tin!');
+            return;
+        }
+
+        fetch('http://localhost:8000/admin/classes/', {  // Thêm dấu / ở cuối đường dẫn
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -80,19 +86,23 @@ document.addEventListener('DOMContentLoaded', function () {
             },
             body: JSON.stringify({
                 lophoc: ten_lop,
-                nam_hoc: parseInt(nam_hoc),  // Đảm bảo là ID của năm học
-                giao_vien: [parseInt(giaovien_lop)]  // Đảm bảo là ID giáo viên
+                id_nh: parseInt(nam_hoc),  // Đảm bảo là ID của năm học
+                id_gv: [parseInt(giaovien_lop)]  // Đảm bảo là ID giáo viên
             })
         })
         .then(response => {
             if (response.ok) {
-                alert('Thêm lớp học thành công!');
-                window.location.href = '../ql_lophoc.html';
+                return response.json();  // Phản hồi thành công, trả về dữ liệu JSON
             } else {
                 return response.json().then(data => {
                     throw new Error(data.detail || 'Có lỗi xảy ra khi thêm lớp học.');
                 });
             }
+        })
+        .then(data => {
+            alert('Thêm lớp học thành công!');  // Hiển thị thông báo thành công
+            console.log(data);  // In dữ liệu trả về
+            window.location.href = '../ql_lophoc.html';  // Chuyển hướng đến trang quản lý lớp học
         })
         .catch(error => {
             console.error('Lỗi khi thêm lớp học:', error);

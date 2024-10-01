@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function () {
     const token = localStorage.getItem('access_token');
 
+    // Kiểm tra token
     if (!token) {
         alert('Token không tồn tại! Vui lòng đăng nhập lại.');
         setTimeout(() => {
@@ -9,6 +10,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
+    // Kiểm tra quyền truy cập
     try {
         const response = await fetch('http://localhost:8000/auth/admin/me', {
             method: 'GET',
@@ -32,6 +34,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             setTimeout(() => {
                 window.location.href = '../../auth/login.html';
             }, 3000);
+            return; // Dừng thực hiện nếu không có quyền
         }
     } catch (error) {
         console.error('Lỗi khi lấy thông tin người dùng:', error);
@@ -39,74 +42,74 @@ document.addEventListener('DOMContentLoaded', async function () {
         setTimeout(() => {
             window.location.href = '../../auth/login.html';
         }, 3000);
+        return;
     }
-});
 
-document.addEventListener('DOMContentLoaded', function () {
     const apiUrl = 'http://localhost:8000/admin/classes'; // Địa chỉ API lấy danh sách lớp học
     let classIdToDelete = null; // Biến lưu ID của lớp học cần xóa
 
     // Hàm để hiển thị danh sách lớp học
-    function displayClasses() {
-        fetch(apiUrl)
-            .then(response => response.json())
-            .then(classes => {
-                const tableBody = document.getElementById('class-list');
-                tableBody.innerHTML = ''; // Xóa nội dung bảng trước khi thêm dữ liệu mới
+    async function displayClasses() {
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Lỗi khi lấy dữ liệu');
 
-                classes.forEach(cls => {
-                    const row = document.createElement('tr');
+            const classes = await response.json();
+            const tableBody = document.getElementById('class-list');
+            tableBody.innerHTML = ''; // Xóa nội dung bảng trước khi thêm dữ liệu mới
 
-                    // Tạo các ô cho thông tin lớp học
-                    row.innerHTML = `
-                        <td>${cls.id_lh}</td>
-                        <td>${cls.lophoc}</td>
-                        <td>${cls.nam_hoc.namhoc || 'Chưa có năm học'}</td>
-                        <td>${cls.giao_vien ? cls.giao_vien.ten_gv : 'Chưa có giáo viên'}</td>
-                        <td>${cls.tong_so_hoc_sinh || 0}</td> <!-- Hiển thị tổng số học sinh -->
-                        <td><a href="edit_lh/edit_lh.html?id=${cls.id_lh}" class="btn-edit">Chỉnh Sửa</a></td>
-                        <td><button class="btn-delete" data-id="${cls.id_lh}">Xóa</button></td>
-                    `;
+            classes.forEach(cls => {
+                const row = document.createElement('tr');
 
-                    tableBody.appendChild(row);
-                });
+                // Tạo các ô cho thông tin lớp học
+                row.innerHTML = `
+                <td>${cls.id_lh}</td>
+                <td>${cls.lophoc}</td>
+                <td>${cls.nam_hoc.namhoc || 'Chưa có năm học'}</td>
+                <td>${cls.giao_vien && cls.giao_vien.length > 0 ? cls.giao_vien.map(gv => gv.ten_gv).join(', ') : 'Chưa có giáo viên'}</td>
+                <td>${cls.tong_so_hoc_sinh || 0}</td> <!-- Hiển thị tổng số học sinh -->
+                <td><a href="edit_lh/edit_lh.html?id=${cls.id_lh}" class="btn-edit">Chỉnh Sửa</a></td>
+                <td><button class="btn-delete" data-id="${cls.id_lh}">Xóa</button></td>
+            `;
 
-                // Thêm sự kiện cho các nút xóa
-                document.querySelectorAll('.btn-delete').forEach(button => {
-                    button.addEventListener('click', function () {
-                        classIdToDelete = this.getAttribute('data-id');
-                        document.getElementById('popup-overlay').style.display = 'flex'; // Hiển thị pop-up
-                    });
-                });
-            })
-            .catch(error => {
-                console.error('Lỗi khi lấy dữ liệu:', error);
+                tableBody.appendChild(row);
             });
+
+            // Thêm sự kiện cho các nút xóa
+            document.querySelectorAll('.btn-delete').forEach(button => {
+                button.addEventListener('click', function () {
+                    classIdToDelete = this.getAttribute('data-id');
+                    document.getElementById('popup-overlay').style.display = 'flex'; // Hiển thị pop-up
+                });
+            });
+        } catch (error) {
+            console.error('Lỗi khi lấy dữ liệu:', error);
+        }
     }
 
     // Hiển thị danh sách lớp học khi trang được tải
-    displayClasses();
+    await displayClasses();
 
     // Xử lý nút xác nhận xóa
-    document.getElementById('confirm-delete').addEventListener('click', function () {
+    document.getElementById('confirm-delete').addEventListener('click', async function () {
         if (classIdToDelete) {
-            fetch(`http://localhost:8000/admin/classes/${classIdToDelete}`, {
-                method: 'DELETE',
-            })
-                .then(response => {
-                    if (response.ok) {
-                        alert('Xóa thành công!');
-                        displayClasses(); // Cập nhật lại danh sách lớp học
-                    } else {
-                        alert('Có lỗi xảy ra khi xóa lớp học.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Lỗi khi xóa:', error);
-                    alert('Có lỗi xảy ra khi xóa lớp học.');
+            try {
+                const response = await fetch(`http://localhost:8000/admin/classes/${classIdToDelete}`, {
+                    method: 'DELETE',
                 });
 
-            document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
+                if (response.ok) {
+                    alert('Xóa thành công!');
+                    await displayClasses(); // Cập nhật lại danh sách lớp học
+                } else {
+                    alert('Có lỗi xảy ra khi xóa lớp học.');
+                }
+            } catch (error) {
+                console.error('Lỗi khi xóa:', error);
+                alert('Có lỗi xảy ra khi xóa lớp học.');
+            } finally {
+                document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
+            }
         }
     });
 
