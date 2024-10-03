@@ -63,6 +63,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
         studentIdToDelete = null; // Reset ID sau khi hủy
     });
+
+    // Sự kiện tìm kiếm học sinh
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function () {
+        const query = searchInput.value;
+        filterStudents(query); // Gọi hàm lọc học sinh
+    });
 });
 
 // Hàm gọi API để lấy quyền người dùng
@@ -127,15 +134,10 @@ function createStudentRow(student) {
         <td>${formattedDate}</td>
         <td>${parentNames}</td>
         <td>${classNames}</td>
-        <td><a href="edit_hs/edit_hs.html?id=${student.id_hs}" class="btn-edit">Chỉnh Sửa</a></td>
+        <td><a href="edit_hs_gv.html?id=${student.id_hs}" class="btn-edit">Chỉnh Sửa</a></td>
         <td><button class="btn-delete" data-id="${student.id_hs}">Xóa</button></td>
     `;
     return row;
-}
-
-// Hàm để hiển thị hoặc ẩn pop-up
-function togglePopup(show) {
-    document.getElementById('popup-overlay').style.display = show ? 'flex' : 'none';
 }
 
 // Hàm để chuyển đổi định dạng ngày từ yyyy-mm-dd sang dd-mm-yyyy

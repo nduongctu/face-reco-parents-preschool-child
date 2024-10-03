@@ -104,10 +104,10 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.Giao
 
     # Thêm tài khoản vào cơ sở dữ liệu
     db.add(new_account)
-    db.commit()  # Lưu thay đổi
+    db.commit()
     db.refresh(new_account)  # Cập nhật đối tượng tài khoản với ID mới
 
-    # Tạo giáo viên mới
+    # Tạo giáo viên mới và liên kết với tài khoản
     new_teacher = models.GiaoVien(
         ten_gv=teacher.ten_gv,
         gioitinh_gv=teacher.gioitinh_gv,
@@ -115,7 +115,7 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.Giao
         diachi_gv=teacher.diachi_gv,
         sdt_gv=teacher.sdt_gv,
         email_gv=teacher.email_gv,
-        id_taikhoan=new_account.id_taikhoan
+        id_taikhoan=new_account.id_taikhoan  # Liên kết tài khoản với giáo viên
     )
 
     db.add(new_teacher)
@@ -123,10 +123,9 @@ def create_teacher(db: Session, teacher: schemas.GiaoVienCreate) -> schemas.Giao
         db.commit()
         db.refresh(new_teacher)  # Cập nhật đối tượng giáo viên với ID mới
     except Exception as e:
-        db.rollback()  # Hoàn tác nếu có lỗi
+        db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Trả về phản hồi với đúng schema
     return schemas.GiaoVienCreateResponse(
         id_gv=new_teacher.id_gv,
         ten_gv=new_teacher.ten_gv,
@@ -261,6 +260,48 @@ def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
                 "quanhe": phu_huynh.quanhe,
                 "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
 
+            }
+            for phu_huynh in student.phu_huynhs
+        ]
+
+        id_taikhoan = student.tai_khoan.id_taikhoan if student.tai_khoan else None
+
+        student_data = schemas.HocSinhResponse(
+            id_hs=student.id_hs,
+            ten_hs=student.ten_hs,
+            gioitinh_hs=student.gioitinh_hs,
+            ngaysinh_hs=student.ngaysinh_hs,
+            lop_hoc_ten=lop_hoc_ten,
+            phu_huynh=phu_huynh_info,
+            id_taikhoan=id_taikhoan
+        )
+
+        result.append(student_data)
+
+    return result
+
+
+def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResponse]:
+    # Lấy danh sách các học sinh thuộc các lớp mà giáo viên có id_gv đang dạy
+    students = db.query(models.HocSinh).join(models.HocSinh.lop_hoc).join(models.LopHoc.giao_viens).options(
+        joinedload(models.HocSinh.tai_khoan),
+        joinedload(models.HocSinh.lop_hoc),
+        joinedload(models.HocSinh.phu_huynhs)
+    ).filter(
+        models.GiaoVien.id_gv == id_gv  # Lọc theo id giáo viên
+    ).all()
+
+    result = []
+    for student in students:
+        lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
+
+        # Lấy danh sách thông tin phụ huynh từ bảng PhuHuynh_HocSinh
+        phu_huynh_info = [
+            {
+                "id_ph": phu_huynh.phu_huynh.id_ph,  # Thêm id_ph ở đây
+                "ten_ph": phu_huynh.phu_huynh.ten_ph,
+                "quanhe": phu_huynh.quanhe,
+                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
             }
             for phu_huynh in student.phu_huynhs
         ]
@@ -707,8 +748,20 @@ def get_all_accounts(db: Session):
     return db.query(models.TaiKhoan).all()
 
 
-def get_account_by_id(db: Session, account_id: int):
+def get_account_by_id(db: Session, account_id: int) -> schemas.TaiKhoanBase:
+    # Truy vấn tài khoản từ CSDL
     account = db.query(models.TaiKhoan).filter(models.TaiKhoan.id_taikhoan == account_id).first()
+
+    # Kiểm tra xem tài khoản có tồn tại không
+    if account is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+
+    # Trả về dữ liệu theo đúng schema TaiKhoanBase
+    return schemas.TaiKhoanBase.from_orm(account)
+
+
+def get_account_by_username(db: Session, username: str):
+    account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == username).first()
     if account is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
     return account
@@ -729,12 +782,18 @@ def create_account(db: Session, account: schemas.TaiKhoanCreate):
 def update_account(db: Session, account_id: int, account: schemas.TaiKhoanUpdate):
     db_account = get_account_by_id(db, account_id)
 
+    if account.matkhau is not None:
+        # Mã hóa mật khẩu trước khi cập nhật
+        account.matkhau = hash_password(account.matkhau)
+
     for key, value in account.dict().items():
         if value is not None:
             setattr(db_account, key, value)
 
     db.commit()
     db.refresh(db_account)
+
+    # Trả về tài khoản đã được cập nhật
     return db_account
 
 

@@ -63,6 +63,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
         studentIdToDelete = null; // Reset ID sau khi hủy
     });
+
+    // Sự kiện tìm kiếm học sinh
+    const searchInput = document.getElementById('search-input');
+    searchInput.addEventListener('input', function () {
+        const query = searchInput.value;
+        filterStudents(query); // Gọi hàm lọc học sinh
+    });
 });
 
 // Hàm gọi API để lấy quyền người dùng
@@ -154,10 +161,11 @@ function filterStudents(query) {
         const id = cells[0].textContent.toLowerCase();
         const name = cells[1].textContent.toLowerCase();
 
+        // Lọc theo mã số học sinh hoặc tên học sinh
         if (id.includes(query.toLowerCase()) || name.includes(query.toLowerCase())) {
-            row.style.display = '';
+            row.style.display = ''; // Hiển thị hàng phù hợp
         } else {
-            row.style.display = 'none';
+            row.style.display = 'none'; // Ẩn hàng không phù hợp
         }
     });
 }

@@ -6,6 +6,7 @@ from typing import List
 from backend import models, schemas
 from backend.config import settings
 from backend import crud
+from passlib.context import CryptContext
 
 # Tạo engine và session để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -20,6 +21,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # Các route API giáo viên
@@ -66,6 +70,14 @@ def get_all_students(db: Session = Depends(get_db)):
     students = crud.get_all_students(db)
     if not students:
         raise HTTPException(status_code=404, detail="Không có học sinh nào")
+    return students
+
+
+@router.get("/students_gv/{id_gv}", response_model=List[schemas.HocSinhResponse])
+def get_students_by_teacher(id_gv: int, db: Session = Depends(get_db)):
+    students = crud.get_students_by_teacher(db, id_gv)
+    if not students:
+        raise HTTPException(status_code=404, detail="Không có học sinh nào thuộc giáo viên này")
     return students
 
 
@@ -160,6 +172,7 @@ def update_academic_year(year_id: int, year_data: schemas.NamHocUpdate, db: Sess
 def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
     return crud.delete_academic_year(db, year_id)
 
+
 # # Các route API phụ huynh
 # @router.get("/parents", response_model=List[PhuHuynhResponse])
 # def get_all_parents(db: Session = Depends(get_db)):
@@ -201,12 +214,15 @@ def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
 #     return [TaiKhoanResponse.from_orm(account) for account in accounts]
 #
 #
-# @router.get("/accounts/{account_id}", response_model=TaiKhoanResponse)
-# def get_account_by_id(account_id: int, db: Session = Depends(get_db)):
-#     account = crud.get_account_by_id(db, account_id)
-#     if not account:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
-#     return TaiKhoanResponse.from_orm(account)
+@router.get("/accounts/{account_id}", response_model=schemas.TaiKhoanResponse)
+def get_account_by_id(account_id: int, db: Session = Depends(get_db)):
+    account = crud.get_account_by_id(db, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+
+    return schemas.TaiKhoanResponse.from_orm(account)
+
+
 #
 #
 # @router.post("/accounts", response_model=TaiKhoanResponse)
@@ -214,13 +230,35 @@ def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
 #     return TaiKhoanResponse.from_orm(crud.create_account(db, account_data))
 #
 #
-# @router.put("/accounts/{account_id}", response_model=TaiKhoanResponse)
-# def update_account(account_id: int, account_data: TaiKhoanUpdate, db: Session = Depends(get_db)):
-#     db_account = crud.update_account(db, account_id, account_data)
-#     if db_account is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
-#     return TaiKhoanResponse.from_orm(db_account)
-#
+@router.put("/accounts/{account_id}", response_model=schemas.TaiKhoanResponse)
+def update_account(account_id: int, account_data: schemas.TaiKhoanUpdate, db: Session = Depends(get_db)):
+    db_account = crud.update_account(db, account_id, account_data)
+    if db_account is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+    return schemas.TaiKhoanResponse.from_orm(db_account)
+
+
+@router.put("/accounts/username/{username}", response_model=schemas.TaiKhoanResponse)
+def update_account_by_username(username: str, account_data: schemas.TaiKhoanUpdate, db: Session = Depends(get_db)):
+    db_account = crud.get_account_by_username(db, username)
+
+    if db_account is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản")
+
+    if account_data.matkhau:
+        account_data.matkhau = pwd_context.hash(account_data.matkhau)  # Băm mật khẩu mới
+
+    # Cập nhật các trường khác
+    for key, value in account_data.dict().items():
+        if value is not None:
+            setattr(db_account, key, value)
+
+    # Lưu thay đổi vào cơ sở dữ liệu
+    db.commit()
+    db.refresh(db_account)
+
+    return schemas.TaiKhoanResponse.from_orm(db_account)
+
 #
 # @router.delete("/accounts/{account_id}", response_model=dict)
 # def delete_account(account_id: int, db: Session = Depends(get_db)):
