@@ -253,14 +253,16 @@ def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
     for student in students:
         lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
 
-        # Lấy danh sách thông tin phụ huynh từ bảng PhuHuynh_HocSinh
+        # Lấy năm học từ lớp học
+        nam_hoc = student.lop_hoc.nam_hoc.namhoc if student.lop_hoc and student.lop_hoc.nam_hoc else 'Chưa có năm học'
+
+        # Thông tin phụ huynh
         phu_huynh_info = [
             {
-                "id_ph": phu_huynh.phu_huynh.id_ph,  # Thêm id_ph ở đây
+                "id_ph": phu_huynh.phu_huynh.id_ph,
                 "ten_ph": phu_huynh.phu_huynh.ten_ph,
                 "quanhe": phu_huynh.quanhe,
-                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
-
+                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph
             }
             for phu_huynh in student.phu_huynhs
         ]
@@ -273,6 +275,7 @@ def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
             gioitinh_hs=student.gioitinh_hs,
             ngaysinh_hs=student.ngaysinh_hs,
             lop_hoc_ten=lop_hoc_ten,
+            nam_hoc=nam_hoc,  # Gán năm học cho học sinh
             phu_huynh=phu_huynh_info,
             id_taikhoan=id_taikhoan
         )
@@ -283,7 +286,6 @@ def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
 
 
 def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResponse]:
-    # Truy vấn lấy danh sách học sinh và thông tin liên quan
     students = db.query(models.HocSinh).join(models.HocSinh.lop_hoc).join(models.LopHoc.giao_viens).options(
         joinedload(models.HocSinh.tai_khoan),
         joinedload(models.HocSinh.lop_hoc),

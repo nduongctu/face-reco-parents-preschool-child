@@ -170,10 +170,10 @@ class HocSinhBase(BaseModel):
     ten_hs: str
     gioitinh_hs: str
     ngaysinh_hs: date
-    lop_hoc_ten: Optional[str] = None  # Tên lớp học
-    nam_hoc: Optional[str] = None  # Năm học
+    lop_hoc_ten: Optional[str] = None
+    nam_hoc: Optional[str] = None
     phu_huynh: Optional[List[PhuHuynhInfo]] = None
-    id_taikhoan: Optional[int] = None  # ID tài khoản
+    id_taikhoan: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

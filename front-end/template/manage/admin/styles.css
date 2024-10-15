@@ -128,7 +128,6 @@ header h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* CSS cho container nút */
 .button-container {
     margin: 20px 0; /* Khoảng cách trên và dưới của nút */
     text-align: center; /* Căn giữa nút trong container */
