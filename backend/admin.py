@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Body
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from typing import List
+from typing import List, Optional
 from backend import models, schemas
 from backend.config import settings
 from backend import crud
 from passlib.context import CryptContext
+from datetime import datetime
+import logging
+import shutil
+import os
 
 # Tạo engine và session để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -24,6 +28,31 @@ def get_db():
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+UPLOAD_DIRECTORY = "uploads/"
+
+
+def save_image(file: UploadFile) -> str:
+    """
+    Lưu file hình ảnh lên server và trả về đường dẫn lưu trữ.
+    """
+    # Kiểm tra và tạo thư mục nếu chưa tồn tại
+    if not os.path.exists(UPLOAD_DIRECTORY):
+        os.makedirs(UPLOAD_DIRECTORY)
+
+    # Tạo tên file mới để đảm bảo tính duy nhất (có thể sử dụng thời gian hiện tại)
+    file_extension = file.filename.split(".")[-1]  # Lấy phần mở rộng của file (jpg, png,...)
+    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+
+    # Đường dẫn đầy đủ để lưu file
+    file_location = os.path.join(UPLOAD_DIRECTORY, file_name)
+
+    # Lưu file vào thư mục
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Trả về đường dẫn của file
+    return file_location
 
 
 # Các route API giáo viên
@@ -61,10 +90,11 @@ def delete_teacher(teacher_id: int, db: Session = Depends(get_db)):
         crud.delete_teacher(db, teacher_id)
         return {"message": "Xóa giáo viên thành công"}
     except HTTPException as e:
-        raise e  # Nếu có lỗi xảy ra, ném lại lỗi để FastAPI xử lý
+        raise e
+
+    # Các route API học sinh
 
 
-# Các route API học sinh
 @router.get("/students", response_model=List[schemas.HocSinhResponse])
 def get_all_students(db: Session = Depends(get_db)):
     students = crud.get_all_students(db)
@@ -179,26 +209,50 @@ def delete_academic_year(year_id: int, db: Session = Depends(get_db)):
 #     parents = crud.get_all_parents(db)
 #     return [PhuHuynhResponse.from_orm(parent) for parent in parents]
 #
-#
-# @router.get("/parents/{parent_id}", response_model=PhuHuynhResponse)
-# def get_parent_by_id(parent_id: int, db: Session = Depends(get_db)):
-#     parent = crud.get_parent_by_id(db, parent_id)
-#     if not parent:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
-#     return PhuHuynhResponse.from_orm(parent)
+@router.get("/students/{student_id}/parents", response_model=List[schemas.PhuHuynhHocSinhResponse])
+def read_parents(student_id: int, db: Session = Depends(get_db)):
+    parents = crud.get_parent_hoc_sinh(db, student_id)
+    return parents
+
+
+@router.get("/parents/{parent_id}", response_model=schemas.PhuHuynhFullResponse)
+def get_parent_by_id(parent_id: int, db: Session = Depends(get_db)):
+    parent = crud.get_parent_by_id(db, parent_id)
+    if not parent:
+        raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
+    return schemas.PhuHuynhFullResponse.from_orm(parent)
+
+
 #
 #
 # @router.post("/parents", response_model=PhuHuynhResponse)
 # def create_parent(parent_data: PhuHuynhCreate, db: Session = Depends(get_db)):
 #     return PhuHuynhResponse.from_orm(crud.create_parent(db, parent_data))
 #
-#
-# @router.put("/parents/{parent_id}", response_model=PhuHuynhResponse)
-# def update_parent(parent_id: int, parent_data: PhuHuynhUpdate, db: Session = Depends(get_db)):
-#     db_parent = crud.update_parent(db, parent_id, parent_data)
-#     if db_parent is None:
-#         raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
-#     return PhuHuynhResponse.from_orm(db_parent)
+def save_image(file: UploadFile) -> str:
+    if not os.path.exists(UPLOAD_DIRECTORY):
+        os.makedirs(UPLOAD_DIRECTORY)
+
+    file_extension = file.filename.split(".")[-1]
+    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
+    file_location = os.path.join(UPLOAD_DIRECTORY, file_name)
+
+    with open(file_location, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    return file_location
+
+
+@router.put("/parents/{parent_id}", response_model=schemas.PhuHuynhFullResponse)
+def update_parent_endpoint(
+        parent_id: int,
+        parent: schemas.PhuHuynhFullUpdate = Body(...),
+        files: List[UploadFile] = File(None),
+        db: Session = Depends(get_db)
+):
+    return crud.update_parent(db, parent_id, parent, files)
+
+
 #
 #
 # @router.delete("/parents/{parent_id}", response_model=dict)

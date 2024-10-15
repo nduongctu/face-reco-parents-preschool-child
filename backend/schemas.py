@@ -52,6 +52,65 @@ class LopHocBase(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PhuHuynh_HocSinh(BaseModel):
+    id_ph: Optional[int] = None
+    ten_ph: Optional[str] = None
+    gioitinh_ph: Optional[str] = None
+    ngaysinh_ph: Optional[date] = None
+    sdt_ph: Optional[str] = None
+    diachi_ph: Optional[str] = None
+    quanhe: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PhuHuynhImages(BaseModel):
+    id_image: int
+    id_ph: int
+    image_path: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PhuHuynhFullResponse(BaseModel):
+    id_ph: Optional[int] = None
+    ten_ph: Optional[str] = None
+    gioitinh_ph: Optional[str] = None
+    ngaysinh_ph: Optional[date] = None
+    sdt_ph: Optional[str] = None
+    diachi_ph: Optional[str] = None
+    quanhe: Optional[str] = None
+    hinhanh_ph: Optional[List[str]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PhuHuynhFullUpdate(BaseModel):
+    ten_ph: Optional[str] = None
+    gioitinh_ph: Optional[str] = None
+    ngaysinh_ph: Optional[date] = None
+    sdt_ph: Optional[str] = None
+    diachi_ph: Optional[str] = None
+    quanhe: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PhuHuynhUpdate(BaseModel):
+    id_ph: int
+    ten_ph: Optional[str] = None
+    gioitinh_ph: Optional[str] = None
+    ngaysinh_ph: Optional[date] = None
+    sdt_ph: Optional[str] = None
+    diachi_ph: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PhuHuynhHocSinhResponse(PhuHuynh_HocSinh):
+    pass
+
+
 class GiaoVienCreate(BaseModel):
     ten_gv: str
     gioitinh_gv: str
@@ -112,6 +171,7 @@ class HocSinhBase(BaseModel):
     gioitinh_hs: str
     ngaysinh_hs: date
     lop_hoc_ten: Optional[str] = None  # Tên lớp học
+    nam_hoc: Optional[str] = None  # Năm học
     phu_huynh: Optional[List[PhuHuynhInfo]] = None
     id_taikhoan: Optional[int] = None  # ID tài khoản
 

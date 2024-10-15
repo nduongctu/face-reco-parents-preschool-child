@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = '../manage/giaovien/giaovien.html';
                         break;
                     case 2:
-                        window.location.href = '../manage/hocsinh/hocsinh.html';
+                        window.location.href = '../manage/hocsinh/tongquat.html';
                         break;
                     default:
                         alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');

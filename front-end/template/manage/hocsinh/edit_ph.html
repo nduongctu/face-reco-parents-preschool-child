@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh Sửa Phụ Huynh</title>
+    <link rel="stylesheet" href="edit_hs.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Tổng Quan</a></li>
+        <li><a href="phuhuynh.html" class="active"><i class="fas fa-user-graduate"></i>Phụ Huynh</a></li>
+        <li><a href="hocsinh.html"><i class="fas fa-book"></i>Tài Khoản</a></li>
+        <li><a href="matkhau.html"><i class="fas fa-user"></i>Mật Khẩu</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <a href="phuhuynh.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+
+        <h1>Thông Tin Phụ Huynh</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User"/>
+            <span>Phụ Huynh</span>
+        </div>
+    </header>
+
+    <!-- Edit Form -->
+    <div class="content">
+        <form id="edit-parent-form" enctype="multipart/form-data">
+            <input type="hidden" id="id_ph" name="id_ph"> <!-- ID phụ huynh ẩn -->
+
+            <div>
+                <label for="ten_ph">Họ Tên:</label>
+                <input type="text" id="ten_ph" name="ten_ph" required>
+            </div>
+            <div>
+                <label for="gioitinh_ph">Giới Tính:</label>
+                <select id="gioitinh_ph" name="gioitinh_ph" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div>
+                <label for="ngaysinh_ph">Ngày Sinh:</label>
+                <input type="date" id="ngaysinh_ph" name="ngaysinh_ph" required>
+            </div>
+            <div>
+                <label for="sdt_ph">Số Điện Thoại:</label>
+                <input type="tel" id="sdt_ph" name="sdt_ph" required>
+            </div>
+            <div>
+                <label for="diachi_ph">Địa Chỉ:</label>
+                <input type="text" id="diachi_ph" name="diachi_ph" required>
+            </div>
+            <div>
+                <label for="quanhe">Quan Hệ:</label>
+                <input type="text" id="quanhe" name="quanhe" required>
+            </div>
+            <div>
+                <label for="hinhanh">Hình Ảnh:</label>
+                <input type="file" id="hinhanh" multiple accept="image/*"> <!-- Chọn nhiều ảnh -->
+            </div>
+            <div>
+                <button type="submit">Lưu Thay Đổi</button>
+            </div>
+        </form>
+
+        <!-- Container to display existing images -->
+        <div id="image-preview">
+            <h3>Hình Ảnh Hiện Tại:</h3>
+            <!-- Existing images will be displayed here -->
+        </div>
+    </div>
+</div>
+
+<script src="ph_edit.js"></script>
+</body>
+</html>

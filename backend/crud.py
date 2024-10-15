@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session, joinedload
-from fastapi import HTTPException
+from fastapi import HTTPException, UploadFile
 from backend import models, schemas
 from passlib.context import CryptContext
 from typing import List, Optional
+from admin import save_image
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -282,10 +283,11 @@ def get_all_students(db: Session) -> List[schemas.HocSinhResponse]:
 
 
 def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResponse]:
-    # Lấy danh sách các học sinh thuộc các lớp mà giáo viên có id_gv đang dạy
+    # Truy vấn lấy danh sách học sinh và thông tin liên quan
     students = db.query(models.HocSinh).join(models.HocSinh.lop_hoc).join(models.LopHoc.giao_viens).options(
         joinedload(models.HocSinh.tai_khoan),
         joinedload(models.HocSinh.lop_hoc),
+        joinedload(models.HocSinh.lop_hoc).joinedload(models.LopHoc.nam_hoc),  # Tải thêm thông tin NamHoc
         joinedload(models.HocSinh.phu_huynhs)
     ).filter(
         models.GiaoVien.id_gv == id_gv  # Lọc theo id giáo viên
@@ -294,26 +296,29 @@ def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResp
     result = []
     for student in students:
         lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
+        nam_hoc = student.lop_hoc.nam_hoc.namhoc if student.lop_hoc and student.lop_hoc.nam_hoc else 'Chưa có năm học'
 
         # Lấy danh sách thông tin phụ huynh từ bảng PhuHuynh_HocSinh
         phu_huynh_info = [
             {
-                "id_ph": phu_huynh.phu_huynh.id_ph,  # Thêm id_ph ở đây
+                "id_ph": phu_huynh.phu_huynh.id_ph,
                 "ten_ph": phu_huynh.phu_huynh.ten_ph,
                 "quanhe": phu_huynh.quanhe,
-                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
+                "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph
             }
             for phu_huynh in student.phu_huynhs
         ]
 
         id_taikhoan = student.tai_khoan.id_taikhoan if student.tai_khoan else None
 
+        # Tạo dữ liệu cho từng học sinh
         student_data = schemas.HocSinhResponse(
             id_hs=student.id_hs,
             ten_hs=student.ten_hs,
             gioitinh_hs=student.gioitinh_hs,
             ngaysinh_hs=student.ngaysinh_hs,
             lop_hoc_ten=lop_hoc_ten,
+            nam_hoc=nam_hoc,  # Thêm thông tin năm học
             phu_huynh=phu_huynh_info,
             id_taikhoan=id_taikhoan
         )
@@ -327,13 +332,18 @@ def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
     student = db.query(models.HocSinh).options(
         joinedload(models.HocSinh.tai_khoan),
         joinedload(models.HocSinh.lop_hoc),
-        joinedload(models.HocSinh.phu_huynhs)
+        joinedload(models.HocSinh.phu_huynhs),
+        joinedload(models.HocSinh.lop_hoc).joinedload(models.LopHoc.nam_hoc)  # Thêm để tải năm học
     ).filter(models.HocSinh.id_hs == student_id).first()
 
     if not student:
         raise HTTPException(status_code=404, detail="Học sinh không tìm thấy")
 
+    # Lấy tên lớp học
     lop_hoc_ten = student.lop_hoc.lophoc if student.lop_hoc else 'Chưa có lớp'
+
+    # Lấy thông tin năm học
+    nam_hoc = student.lop_hoc.nam_hoc.namhoc if student.lop_hoc and student.lop_hoc.nam_hoc else 'Chưa có năm học'
 
     # Lấy thông tin phụ huynh, bao gồm cả giới tính
     phu_huynh_info = [
@@ -354,6 +364,7 @@ def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
         gioitinh_hs=student.gioitinh_hs,
         ngaysinh_hs=student.ngaysinh_hs,
         lop_hoc_ten=lop_hoc_ten,
+        nam_hoc=nam_hoc,
         phu_huynh=phu_huynh_info,
         id_taikhoan=id_taikhoan
     )
@@ -362,7 +373,6 @@ def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
 
 
 def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate):
-    # 1. Tạo tài khoản cho học sinh
     existing_account = db.query(models.TaiKhoan).filter(models.TaiKhoan.taikhoan == student_data.taikhoan).first()
     if existing_account:
         raise HTTPException(status_code=400, detail="Tài khoản đã tồn tại")
@@ -376,7 +386,6 @@ def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate
     db.commit()
     db.refresh(new_account)
 
-    # 2. Tạo học sinh
     new_student = models.HocSinh(
         ten_hs=student_data.ten_hs,
         gioitinh_hs=student_data.gioitinh_hs,
@@ -384,28 +393,25 @@ def create_student_with_parents(db: Session, student_data: schemas.HocSinhCreate
         id_taikhoan=new_account.id_taikhoan
     )
     db.add(new_student)
-    db.commit()  # Có thể giữ lại commit này để đảm bảo học sinh được lưu thành công
+    db.commit()
     db.refresh(new_student)
 
-    # 3. Tạo thông tin phụ huynh và liên kết với học sinh
     for phu_huynh_data in student_data.phu_huynh:
         new_parent = models.PhuHuynh(
             ten_ph=phu_huynh_data.ten_ph,
             gioitinh_ph=phu_huynh_data.gioitinh_ph
         )
         db.add(new_parent)
-        db.commit()  # Lưu phụ huynh trước khi tạo mối quan hệ
-        db.refresh(new_parent)  # Lấy ID của phụ huynh đã lưu
+        db.commit()
+        db.refresh(new_parent)
 
-        # 4. Tạo quan hệ giữa học sinh và phụ huynh
         new_relation = models.PhuHuynh_HocSinh(
-            id_hs=new_student.id_hs,  # ID học sinh
-            id_ph=new_parent.id_ph,  # ID phụ huynh
+            id_hs=new_student.id_hs,
+            id_ph=new_parent.id_ph,
             quanhe=phu_huynh_data.quanhe
         )
         db.add(new_relation)
 
-    # 5. Commit cuối cùng cho các quan hệ phụ huynh
     db.commit()
 
     return new_student
@@ -704,10 +710,94 @@ def get_all_parents(db: Session):
 
 
 def get_parent_by_id(db: Session, parent_id: int):
-    parent = db.query(models.PhuHuynh).filter(models.PhuHuynh.id_ph == parent_id).first()
+    # Lấy phụ huynh và thông tin quan hệ với học sinh
+    parent = db.query(models.PhuHuynh).options(joinedload(models.PhuHuynh.phu_hoc_sinh)).filter(
+        models.PhuHuynh.id_ph == parent_id).first()
+
     if parent is None:
         raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
+
+    # Tạo danh sách quan hệ từ bảng PhuHuynh_HocSinh
+    if parent.phu_hoc_sinh:  # Nếu có mối quan hệ
+        quanhe_list = [relationship.quanhe for relationship in parent.phu_hoc_sinh]
+        parent.quanhe = ', '.join(quanhe_list)  # Ghép các quan hệ thành chuỗi
+    else:
+        parent.quanhe = None  # Không có thông tin quan hệ
+
     return parent
+
+
+# Lấy thông tin phụ huynh cùng với hình ảnh
+def get_full_parent_info(db: Session, parent_id: int) -> schemas.PhuHuynhFullResponse:
+    parent = get_parent_by_id(db, parent_id)
+    if not parent:
+        return None
+
+    image_paths = [image.image_path for image in parent.images] if parent.images else []
+
+    # Trả về đối tượng PhuHuynhFullResponse
+    return schemas.PhuHuynhFullResponse(
+        id_ph=parent.id_ph,
+        ten_ph=parent.ten_ph,
+        gioitinh_ph=parent.gioitinh_ph,
+        ngay_sinh_ph=parent.ngaysinh_ph,
+        sdt_ph=parent.sdt_ph,
+        diachi_ph=parent.diachi_ph,
+        hinhanh_ph=image_paths
+    )
+
+
+def get_parent_hoc_sinh(db: Session, hs_id: int):
+    # Lấy học sinh theo ID
+    student = db.query(models.HocSinh).filter(models.HocSinh.id_hs == hs_id).first()
+
+    if student is None:
+        raise HTTPException(status_code=404, detail="Không tìm thấy học sinh")
+
+    # Tạo danh sách phụ huynh cho học sinh
+    parents = []
+    for ph in student.phu_huynhs:  # Lặp qua các đối tượng PhuHuynh_HocSinh
+        parent = db.query(models.PhuHuynh).filter(models.PhuHuynh.id_ph == ph.id_ph).first()
+        if parent:
+            parents.append({
+                "id_ph": parent.id_ph,
+                "ten_ph": parent.ten_ph,
+                "gioitinh_ph": parent.gioitinh_ph,
+                "ngaysinh_ph": parent.ngaysinh_ph,
+                "sdt_ph": parent.sdt_ph,
+                "diachi_ph": parent.diachi_ph,
+                "quanhe": ph.quanhe  # Lấy quan hệ từ PhuHuynh_HocSinh
+            })
+
+    return parents
+
+
+def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhFullUpdate, files: List[UploadFile] = None):
+    db_parent = get_parent_by_id(db, parent_id)
+
+    if not db_parent:
+        raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
+
+    for key, value in parent.dict(exclude_unset=True).items():
+        setattr(db_parent, key, value)
+
+    if files:
+        existing_images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == parent_id).all()
+
+        for image in existing_images:
+            db.delete(image)
+            if os.path.exists(image.image_path):
+                os.remove(image.image_path)
+
+        for file in files:
+            file_location = save_image(file)
+            new_image = models.PhuHuynh_Images(id_ph=parent_id, image_path=file_location)
+            db.add(new_image)
+
+    db.commit()
+    db.refresh(db_parent)
+
+    return db_parent
 
 
 def create_parent(db: Session, parent: schemas.PhuHuynhCreate):
@@ -720,18 +810,6 @@ def create_parent(db: Session, parent: schemas.PhuHuynhCreate):
         db.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     return new_parent
-
-
-def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhUpdate):
-    db_parent = get_parent_by_id(db, parent_id)
-
-    for key, value in parent.dict().items():
-        if value is not None:
-            setattr(db_parent, key, value)
-
-    db.commit()
-    db.refresh(db_parent)
-    return db_parent
 
 
 def delete_parent(db: Session, parent_id: int):

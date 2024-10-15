@@ -130,6 +130,7 @@ function createStudentRow(student) {
     // Lấy tên lớp học và thông tin phụ huynh
     const classNames = student.lop_hoc_ten || 'Chưa có lớp';
     const parentNames = student.phu_huynh.map(phu_huynh => phu_huynh.ten_ph).join(', ') || 'Chưa có phụ huynh';
+    const namHoc = student.nam_hoc || 'Chưa có năm học'; // Lấy thông tin năm học, mặc định nếu không có
 
     // Thiết lập nội dung cho hàng bảng
     row.innerHTML = `
@@ -139,6 +140,7 @@ function createStudentRow(student) {
         <td>${formattedDate}</td>
         <td>${parentNames}</td>
         <td>${classNames}</td>
+        <td>${namHoc}</td>  <!-- Hiển thị năm học -->
         <td><a href="edit_hs_gv.html?id=${student.id_hs}" class="btn-edit">Chỉnh Sửa</a></td>
         <td><button class="btn-delete" data-id="${student.id_hs}">Xóa</button></td>
     `;
