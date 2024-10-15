@@ -10,9 +10,11 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
-    // Lấy quyền người dùng
-    const userRole = await fetchUserRole(token);
-    if (userRole !== 1) {
+    // Lấy quyền người dùng và id_gv
+    const user = await fetchUserRole(token);
+
+    // Kiểm tra nếu user không hợp lệ
+    if (!user || user.quyen !== 1) {
         alert('Không có quyền truy cập! Vui lòng đăng nhập lại.');
         setTimeout(() => {
             window.location.href = '../../auth/login.html';
@@ -20,7 +22,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
     }
 
-    const apiUrl = 'http://localhost:8000/admin/students'; // Địa chỉ API lấy danh sách học sinh
+    const apiUrl = `http://localhost:8000/admin/students_gv/${user.id_gv}`; // Dùng id_gv lấy từ API
+
     let studentIdToDelete = null; // Khai báo biến ID học sinh cần xóa
 
     // Lấy danh sách học sinh và hiển thị
@@ -47,11 +50,11 @@ document.addEventListener('DOMContentLoaded', async function () {
                     location.reload(); // Tải lại trang để cập nhật danh sách
                 } else {
                     const errorData = await response.json();
-                    alert(errorData.detail || 'Có lỗi xảy ra khi xóa học sinh.'); // Hiển thị thông báo lỗi chi tiết
+                    alert(errorData.detail || 'Có lỗi xảy ra khi xóa học sinh.');
                 }
             } catch (error) {
                 console.error('Lỗi khi xóa:', error);
-                alert('Có lỗi xảy ra khi xóa học sinh.'); // Thông báo lỗi chung
+                alert('Có lỗi xảy ra khi xóa học sinh.');
             }
 
             document.getElementById('popup-overlay').style.display = 'none'; // Ẩn pop-up
@@ -72,12 +75,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 });
 
+
 // Hàm gọi API để lấy quyền người dùng
 async function fetchUserRole(token) {
     try {
         const response = await fetch('http://localhost:8000/auth/admin/me', {
-            method: 'GET',
-            headers: {
+            method: 'GET', headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
@@ -85,11 +88,13 @@ async function fetchUserRole(token) {
         if (!response.ok) {
             const errorData = await response.json();
             alert(errorData.detail || 'Không có quyền truy cập hoặc token không hợp lệ! Vui lòng đăng nhập lại.');
-            return null; // Trả về null thay vì ném lỗi
+            return null; // Trả về null nếu có lỗi
         }
 
         const data = await response.json();
-        return data.quyen; // Trả về quyền của người dùng
+
+        // Trả về đối tượng chứa cả quyền và id_gv
+        return {quyen: data.quyen, id_gv: data.id_gv};
     } catch (error) {
         console.error('Error fetching user info:', error);
         alert('Có lỗi xảy ra! Vui lòng đăng nhập lại.');
