@@ -80,7 +80,20 @@ class PhuHuynhFullResponse(BaseModel):
     sdt_ph: Optional[str] = None
     diachi_ph: Optional[str] = None
     quanhe: Optional[str] = None
-    hinhanh_ph: Optional[List[str]] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TeacherImageResponse(BaseModel):
+    id_gv: int
+    image_path: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class StudentImageResponse(BaseModel):
+    id_hs: int
+    image_path: str
 
     model_config = ConfigDict(from_attributes=True)
 

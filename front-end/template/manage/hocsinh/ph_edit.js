@@ -59,20 +59,6 @@ function populateParentForm(parent) {
     safeSetValue('sdt_ph', parent.sdt_ph);
     safeSetValue('diachi_ph', parent.diachi_ph);
     safeSetValue('quanhe', parent.quanhe);
-
-    // Hiển thị hình ảnh hiện tại nếu có
-    if (parent.hinhanh_ph && Array.isArray(parent.hinhanh_ph)) {
-        const imagePreviewContainer = document.getElementById('image-preview');
-        imagePreviewContainer.innerHTML = ''; // Xóa hình ảnh cũ
-        parent.hinhanh_ph.forEach(imagePath => {
-            const img = document.createElement('img');
-            img.src = imagePath;
-            img.alt = 'Parent Image';
-            img.style.maxWidth = '200px';
-            img.style.margin = '5px';
-            imagePreviewContainer.appendChild(img);
-        });
-    }
 }
 
 async function updateParentInfo(parentId, token) {
@@ -81,49 +67,30 @@ async function updateParentInfo(parentId, token) {
         return element ? element.value.trim() || null : null;
     };
 
-    const formData = new FormData();
+    // Create a JavaScript object to hold the form data
+    const payload = {
+        ten_ph: safeGetValue('ten_ph'),
+        gioitinh_ph: safeGetValue('gioitinh_ph'),
+        ngaysinh_ph: safeGetValue('ngaysinh_ph'),
+        sdt_ph: safeGetValue('sdt_ph'),
+        diachi_ph: safeGetValue('diachi_ph'),
+        quanhe: safeGetValue('quanhe'),
+    };
 
-    // Thêm các trường thông tin cơ bản
-    formData.append('ten_ph', safeGetValue('ten_ph'));
-    formData.append('gioitinh_ph', safeGetValue('gioitinh_ph'));
-    formData.append('ngaysinh_ph', safeGetValue('ngaysinh_ph'));
-    formData.append('sdt_ph', safeGetValue('sdt_ph'));
-    formData.append('diachi_ph', safeGetValue('diachi_ph'));
-    formData.append('quanhe', safeGetValue('quanhe'));
-
-    // Kiểm tra số điện thoại có 10 chữ số
-    if (formData.get('sdt_ph') && formData.get('sdt_ph').length !== 10) {
+    // Validate phone number (10 digits)
+    if (payload.sdt_ph && payload.sdt_ph.length !== 10) {
         alert('Số điện thoại phải có 10 chữ số.');
         return;
-    }
-
-    // Thêm tệp hình ảnh
-    const imageInput = document.getElementById('hinhanh');
-    if (imageInput && imageInput.files.length > 0) {
-        for (let i = 0; i < imageInput.files.length; i++) {
-            formData.append('files', imageInput.files[i]);
-        }
-    }
-
-    // Xử lý hinhanh_ph
-    const currentImages = document.querySelectorAll('#image-preview img');
-    const hinhanhPh = Array.from(currentImages).map(img => img.src);
-    if (hinhanhPh.length > 0) {
-        hinhanhPh.forEach((imagePath, index) => {
-            formData.append(`hinhanh_ph[${index}]`, imagePath);
-        });
-    } else {
-        // Nếu không có hình ảnh, gửi một mảng rỗng
-        formData.append('hinhanh_ph', '');
     }
 
     try {
         const response = await fetch(`http://localhost:8000/admin/parents/${parentId}`, {
             method: 'PUT',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
             },
-            body: formData
+            body: JSON.stringify(payload)
         });
 
         if (response.ok) {

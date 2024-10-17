@@ -1,9 +1,8 @@
 from sqlalchemy.orm import Session, joinedload
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, File, Depends
 from backend import models, schemas
 from passlib.context import CryptContext
 from typing import List, Optional
-from admin import save_image
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -774,7 +773,7 @@ def get_parent_hoc_sinh(db: Session, hs_id: int):
     return parents
 
 
-def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhFullUpdate, files: List[UploadFile] = None):
+def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhFullUpdate):
     db_parent = get_parent_by_id(db, parent_id)
 
     if not db_parent:
@@ -782,19 +781,6 @@ def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhFullUpdat
 
     for key, value in parent.dict(exclude_unset=True).items():
         setattr(db_parent, key, value)
-
-    if files:
-        existing_images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == parent_id).all()
-
-        for image in existing_images:
-            db.delete(image)
-            if os.path.exists(image.image_path):
-                os.remove(image.image_path)
-
-        for file in files:
-            file_location = save_image(file)
-            new_image = models.PhuHuynh_Images(id_ph=parent_id, image_path=file_location)
-            db.add(new_image)
 
     db.commit()
     db.refresh(db_parent)
@@ -881,3 +867,74 @@ def delete_account(db: Session, account_id: int):
     db_account = get_account_by_id(db, account_id)
     db.delete(db_account)
     db.commit()
+
+
+async def upload_teacher_image(db: Session, id_gv: int, file: UploadFile):
+    directory = "images/giao_vien"
+    os.makedirs(directory, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_location = f"{directory}/{timestamp}_{file.filename}"
+
+    try:
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+    except Exception as e:
+        raise Exception(f"Không thể lưu hình ảnh: {str(e)}")
+
+    new_image = models.GiaoVien_Images(id_gv=id_gv, image_path=file_location)
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+    return new_image
+
+
+async def update_teacher_image(db: Session, id_gv: int, image_path: str):
+    teacher_image = db.query(models.GiaoVienImages).filter(models.GiaoVienImages.id_gv == id_gv).first()
+
+    if not teacher_image:
+        # Nếu không có hình ảnh, thêm mới
+        teacher_image = models.GiaoVienImages(id_gv=id_gv, image_path=image_path)
+        db.add(teacher_image)
+    else:
+        teacher_image.image_path = image_path
+
+    try:
+        db.commit()
+        db.refresh(teacher_image)
+    except Exception as e:
+        db.rollback()
+        raise Exception(f"Không thể cập nhật hình ảnh: {str(e)}")
+
+    return teacher_image
+
+
+def get_teacher_image(db: Session, id_gv: int):
+    teacher_image = db.query(models.GiaoVienImages).filter(models.GiaoVienImages.id_gv == id_gv).first()
+    return teacher_image
+
+
+def get_student_image(db: Session, id_hs: int):
+    student_image = db.query(models.HocSinhImages).filter(models.HocSinhImages.id_hs == id_hs).first()
+    return student_image
+
+
+async def update_student_image(db: Session, id_hs: int, image_path: str):
+    # Tìm học sinh theo ID
+    student_image = db.query(models.HocSinhImages).filter(models.HocSinhImages.id_hs == id_hs).first()
+
+    if not student_image:
+        # Nếu không có hình ảnh, thêm mới
+        student_image = models.HocSinhImages(id_hs=id_hs, image_path=image_path)
+        db.add(student_image)
+    else:
+        student_image.image_path = image_path
+
+    try:
+        db.commit()
+        db.refresh(student_image)
+    except Exception as e:
+        db.rollback()
+        raise Exception(f"Không thể cập nhật hình ảnh: {str(e)}")
+
+    return student_image

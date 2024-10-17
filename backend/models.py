@@ -20,10 +20,11 @@ class GiaoVien(Base):
     sdt_gv = Column(String(20), nullable=False)
     email_gv = Column(String(100), nullable=False)
     id_taikhoan = Column(Integer, ForeignKey('TaiKhoan.id_taikhoan'), nullable=False)
-    id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'))  # Thêm khóa ngoại đến LopHoc
+    id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'))
 
     tai_khoan = relationship("TaiKhoan", back_populates="giao_vien")
-    lop_hoc = relationship("LopHoc", back_populates="giao_viens")  # Quan hệ nhiều giáo viên
+    lop_hoc = relationship("LopHoc", back_populates="giao_viens")
+    images = relationship("GiaoVienImages", back_populates="teacher")
 
 
 # Mô hình HocSinh
@@ -40,6 +41,7 @@ class HocSinh(Base):
     lop_hoc = relationship("LopHoc", back_populates="hoc_sinhs")
     tai_khoan = relationship("TaiKhoan", back_populates="hoc_sinh")
     phu_huynhs = relationship("PhuHuynh_HocSinh", back_populates="hoc_sinh")
+    images = relationship("HocSinhImages", back_populates="hoc_sinh")
 
 
 # Mô hình NamHoc
@@ -49,7 +51,6 @@ class NamHoc(Base):
     id_nh = Column(Integer, primary_key=True, index=True)
     namhoc = Column(String(9), nullable=False)
 
-    # Quan hệ với bảng LopHoc
     lop_hocs = relationship("LopHoc", back_populates="nam_hoc")
 
 
@@ -77,10 +78,7 @@ class PhuHuynh(Base):
     sdt_ph = Column(String(20), nullable=True)
     diachi_ph = Column(String(255), nullable=True)
 
-    # Quan hệ với bảng PhuHuynh_HocSinh
     phu_hoc_sinh = relationship("PhuHuynh_HocSinh", back_populates="phu_huynh")
-
-    # Quan hệ với bảng PhuHuynh_Images
     images = relationship("PhuHuynh_Images", back_populates="phu_huynh")
 
 
@@ -92,10 +90,7 @@ class PhuHuynh_HocSinh(Base):
     id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), primary_key=True, nullable=False)
     quanhe = Column(String(20), nullable=False)
 
-    # Quan hệ với bảng PhuHuynh
     phu_huynh = relationship("PhuHuynh", back_populates="phu_hoc_sinh")
-
-    # Quan hệ với bảng HocSinh
     hoc_sinh = relationship("HocSinh", back_populates="phu_huynhs")
 
 
@@ -110,8 +105,6 @@ class TaiKhoan(Base):
 
     # Relationship with GiaoVien table
     giao_vien = relationship("GiaoVien", back_populates="tai_khoan", uselist=False)
-
-    # Relationship with HocSinh table
     hoc_sinh = relationship("HocSinh", back_populates="tai_khoan", uselist=False)
 
 
@@ -125,3 +118,27 @@ class PhuHuynh_Images(Base):
 
     # Quan hệ với bảng PhuHuynh
     phu_huynh = relationship("PhuHuynh", back_populates="images")
+
+
+# Mô hình GiaoVien_Images
+class GiaoVienImages(Base):
+    __tablename__ = 'GiaoVien_Images'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)  # Đảm bảo cột này tự động tăng
+    id_gv = Column(Integer, ForeignKey('GiaoVien.id_gv'))  # Đảm bảo tên khóa ngoại chính xác
+    image_path = Column(String, nullable=True)  # Đặt nullable=True nếu cần thiết
+
+    # Quan hệ với bảng GiaoVien
+    teacher = relationship("GiaoVien", back_populates="images")
+
+
+# Mô hình HocSinh_Images
+class HocSinhImages(Base):  # Đổi tên lớp cho phù hợp với quy ước PEP8
+    __tablename__ = 'HocSinh_Images'
+
+    id = Column(Integer, primary_key=True, index=True)
+    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'))
+    image_path = Column(String(255), nullable=False)
+
+    # Quan hệ với bảng HocSinh
+    hoc_sinh = relationship("HocSinh", back_populates="images")

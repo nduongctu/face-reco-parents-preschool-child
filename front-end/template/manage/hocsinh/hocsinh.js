@@ -31,6 +31,88 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Hiển thị thông tin học sinh vào biểu mẫu
     populateStudentForm(student);
 
+    // Xử lý ảnh đại diện
+    const pictureInput = document.querySelector('input[name="picture"]');
+    const profilePicture = document.querySelector("#profile-picture"); // Lấy hình ảnh đại diện
+
+    // Lấy ảnh học sinh hiện tại khi tải trang
+    const getStudentImage = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/admin/images/hoc-sinh/${studentId}/`, {
+                method: "GET",
+                headers: {'Authorization': `Bearer ${token}`} // Thêm token nếu cần
+            });
+            if (response.ok) {
+                const image = await response.json();
+                profilePicture.src = image.image_path; // Cập nhật src của hình ảnh đại diện
+            } else {
+                console.error("Không thể lấy ảnh học sinh.");
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+        }
+    };
+
+    // Gọi hàm để tải ảnh học sinh khi tải trang
+    await getStudentImage();
+
+    const getUserImage = async () => {
+        try {
+            const response = await fetch(`http://localhost:8000/admin/images/hoc-sinh/${studentId}/`, {
+                method: 'GET',
+                headers: {'Authorization': `Bearer ${token}`}
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                document.getElementById('user-icon').src = data.image_path; // Cập nhật src cho thẻ img user-icon
+            } else {
+                console.error('Không thể lấy ảnh người dùng.');
+            }
+        } catch (error) {
+            console.error('Lỗi:', error);
+        }
+    };
+
+    // Gọi hàm để lấy ảnh cho user-icon
+    await getUserImage();
+
+    document.getElementById('change-picture-button').addEventListener('click', function () {
+        pictureInput.click(); // Kích hoạt hộp thoại chọn tệp
+    });
+
+    // Hiển thị hình ảnh khi người dùng chọn ảnh mới
+    pictureInput.addEventListener("change", async function (event) {
+        const file = event.target.files[0]; // Lấy file ảnh từ input
+
+        if (file) {
+            const formData = new FormData();
+            formData.append("file", file); // Thêm file vào FormData
+            formData.append("id_hs", studentId); // Thêm id_hs vào FormData
+
+            try {
+                const response = await fetch(`http://localhost:8000/admin/images/hoc-sinh/${studentId}/`, {
+                    method: "PUT",
+                    headers: {
+                        'Authorization': `Bearer ${token}` // Thêm token nếu cần
+                    },
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    alert("Cập nhật ảnh đại diện thành công!");
+                    await getStudentImage(); // Tải lại ảnh mới
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.detail || "Có lỗi xảy ra khi cập nhật ảnh đại diện.");
+                }
+            } catch (error) {
+                console.error("Lỗi:", error);
+                alert("Có lỗi xảy ra trong quá trình gửi yêu cầu.");
+            }
+        }
+    });
+
     // Thêm sự kiện cho nút "Thêm Phụ Huynh"
     document.getElementById("btn-add-parent").addEventListener('click', addParentEntry);
 

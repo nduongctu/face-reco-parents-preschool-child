@@ -29,31 +29,6 @@ def get_db():
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-UPLOAD_DIRECTORY = "uploads/"
-
-
-def save_image(file: UploadFile) -> str:
-    """
-    Lưu file hình ảnh lên server và trả về đường dẫn lưu trữ.
-    """
-    # Kiểm tra và tạo thư mục nếu chưa tồn tại
-    if not os.path.exists(UPLOAD_DIRECTORY):
-        os.makedirs(UPLOAD_DIRECTORY)
-
-    # Tạo tên file mới để đảm bảo tính duy nhất (có thể sử dụng thời gian hiện tại)
-    file_extension = file.filename.split(".")[-1]  # Lấy phần mở rộng của file (jpg, png,...)
-    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
-
-    # Đường dẫn đầy đủ để lưu file
-    file_location = os.path.join(UPLOAD_DIRECTORY, file_name)
-
-    # Lưu file vào thư mục
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    # Trả về đường dẫn của file
-    return file_location
-
 
 # Các route API giáo viên
 @router.get("/teachers", response_model=List[schemas.GiaoVienBase])
@@ -229,28 +204,14 @@ def get_parent_by_id(parent_id: int, db: Session = Depends(get_db)):
 # def create_parent(parent_data: PhuHuynhCreate, db: Session = Depends(get_db)):
 #     return PhuHuynhResponse.from_orm(crud.create_parent(db, parent_data))
 #
-def save_image(file: UploadFile) -> str:
-    if not os.path.exists(UPLOAD_DIRECTORY):
-        os.makedirs(UPLOAD_DIRECTORY)
-
-    file_extension = file.filename.split(".")[-1]
-    file_name = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{file.filename}"
-    file_location = os.path.join(UPLOAD_DIRECTORY, file_name)
-
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-
-    return file_location
-
 
 @router.put("/parents/{parent_id}", response_model=schemas.PhuHuynhFullResponse)
 def update_parent_endpoint(
         parent_id: int,
         parent: schemas.PhuHuynhFullUpdate = Body(...),
-        files: List[UploadFile] = File(None),
         db: Session = Depends(get_db)
 ):
-    return crud.update_parent(db, parent_id, parent, files)
+    return crud.update_parent(db, parent_id, parent)
 
 
 #
@@ -313,8 +274,66 @@ def update_account_by_username(username: str, account_data: schemas.TaiKhoanUpda
 
     return schemas.TaiKhoanResponse.from_orm(db_account)
 
-#
-# @router.delete("/accounts/{account_id}", response_model=dict)
-# def delete_account(account_id: int, db: Session = Depends(get_db)):
-#     crud.delete_account(db, account_id)
-#     return {"detail": "Xóa tài khoản thành công"}
+
+@router.post("/images/giao-vien/")
+async def upload_teacher_image(id_gv: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    return await crud.upload_teacher_image(db, id_gv, file)
+
+
+@router.get("/images/giao-vien/{id_gv}/", response_model=schemas.TeacherImageResponse)
+def get_teacher_image(id_gv: int, db: Session = Depends(get_db)):
+    image = crud.get_teacher_image(db, id_gv)
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    image_url = f"http://localhost:8000/{image.image_path}"
+
+    return schemas.TeacherImageResponse(id_gv=image.id_gv, image_path=image_url)
+
+
+@router.put("/images/hoc-sinh/{id_hs}/", response_model=schemas.StudentImageResponse)
+async def update_student_image(
+        id_hs: int,
+        file: UploadFile = File(...),
+        db: Session = Depends(get_db)
+):
+    directory = "images/hoc_sinh"
+    os.makedirs(directory, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_location = f"{directory}/{timestamp}_{file.filename}"
+
+    # Lưu file hình ảnh
+    try:
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Không thể lưu hình ảnh: {str(e)}")
+
+    try:
+        updated_image = await crud.update_student_image(db, id_hs, file_location)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Có lỗi xảy ra khi cập nhật hình ảnh: {str(e)}")
+
+    if not updated_image:
+        raise HTTPException(status_code=404, detail="Học sinh không tồn tại hoặc không thể cập nhật hình ảnh")
+
+    return updated_image
+
+
+@router.post("/images/hoc-sinh/")
+async def upload_student_image(id_hs: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    return await crud.upload_student_image(db, id_hs, file)
+
+
+@router.get("/images/hoc-sinh/{id_hs}/", response_model=schemas.StudentImageResponse)
+def get_student_image(id_hs: int, db: Session = Depends(get_db)):
+    image = crud.get_student_image(db, id_hs)
+
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    image_url = f"http://localhost:8000/{image.image_path}"
+
+    return schemas.StudentImageResponse(id_hs=image.id_hs, image_path=image_url)
