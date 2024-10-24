@@ -18,8 +18,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const ten_hs = document.getElementById('ten_hs').value;
         const gioitinh_hs = document.getElementById('gioitinh_hs').value;
         const ngaysinh_hs = document.getElementById('ngaysinh_hs').value;
-        const taikhoan = document.getElementById('taikhoan_hs').value; // Tài khoản học sinh
-        const matkhau = document.getElementById('matkhau_hs').value;   // Mật khẩu học sinh
+        const taikhoan = document.getElementById('taikhoan_hs').value;
+        const matkhau = document.getElementById('matkhau_hs').value;
 
         // Lấy thông tin phụ huynh
         const parentEntries = document.querySelectorAll('.parent-entry');

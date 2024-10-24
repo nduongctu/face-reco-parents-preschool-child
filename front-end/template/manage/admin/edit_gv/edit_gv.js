@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             if (!response.ok) {
                 const errorData = await response.json();
                 alert(errorData.detail || 'Không thể tải thông tin giáo viên.');
-                window.location.href = '../ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu có lỗi
+                window.location.href = '../ql_giaovien.html';
                 return null;
             }
 
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     };
 
-    // Hiển thị thông tin giáo viên vào biểu mẫu
+    // Hiển thị thông tin giáo viên
     const displayTeacherInfo = (teacher) => {
         document.getElementById('ma_gv').value = teacher.id_gv;
         document.getElementById('ten_gv').value = teacher.ten_gv;
@@ -108,7 +108,15 @@ document.addEventListener('DOMContentLoaded', async function () {
         document.getElementById('diachi_gv').value = teacher.diachi_gv;
         document.getElementById('email_gv').value = teacher.email_gv;
         document.getElementById('quyen').value = teacher.quyen !== undefined ? teacher.quyen : '1'; // Giáo viên mặc định
-        document.getElementById('lop_hoc').value = teacher.id_lh; // Đặt lớp học đã chọn
+
+        // Kiểm tra xem giáo viên có lớp học không và hiển thị tên lớp
+        const className = teacher.lop_hoc_ten || 'Chưa có lớp học'; // Lấy tên lớp học từ dữ liệu
+        document.getElementById('lop_hoc').value = teacher.id_lh || ''; // Nếu có lớp học, điền ID lớp vào trường
+
+        // Nếu không có lớp, hiển thị "Chưa có lớp" trong ô Lớp Học
+        if (!teacher.id_lh) {
+            document.getElementById('lop_hoc').value = 'Chưa có lớp'; // Thiết lập ô là "Chưa có lớp"
+        }
     };
 
     // Gửi yêu cầu cập nhật thông tin giáo viên
@@ -142,7 +150,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const teacherId = getTeacherId();
     if (!teacherId) {
         alert('ID giáo viên không hợp lệ!');
-        window.location.href = '../ql_giaovien.html'; // Quay lại trang danh sách giáo viên nếu không có ID
+        window.location.href = '../ql_giaovien.html';
         return;
     }
 
@@ -154,6 +162,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Tải danh sách lớp học và điền vào dropdown
     const classes = await fetchClasses();
     const classSelect = document.getElementById('lop_hoc');
+
+    // Điền danh sách lớp vào dropdown
     classes.forEach(cls => {
         const option = document.createElement('option');
         option.value = cls.id_lh; // ID lớp học
@@ -161,8 +171,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         classSelect.appendChild(option);
     });
 
+    // Cập nhật giá trị cho ô Lớp Học để hiển thị lớp hiện tại của giáo viên
+    if (teacher && teacher.id_lh) {
+        classSelect.value = teacher.id_lh; // Đặt giá trị của dropdown là lớp hiện tại của giáo viên
+    } else {
+        // Nếu không có lớp học, tạo một tùy chọn "Chưa có lớp" cho dropdown
+        const noClassOption = document.createElement('option');
+        noClassOption.value = ''; // Giá trị trống
+        noClassOption.textContent = 'Chưa có lớp';
+        classSelect.appendChild(noClassOption);
+        classSelect.value = ''; // Đặt giá trị ô thành trống
+    }
+
     // Xử lý sự kiện gửi biểu mẫu
-    document.getElementById('edit-teacher-form').addEventListener('submit', function (event) {
+    document.getElementById('edit-teacher-form').addEventListener('submit', async function (event) {
         event.preventDefault();
 
         const teacherData = {
@@ -174,13 +196,22 @@ document.addEventListener('DOMContentLoaded', async function () {
             diachi_gv: document.getElementById('diachi_gv').value,
             email_gv: document.getElementById('email_gv').value,
             quyen: parseInt(document.getElementById('quyen').value, 10),
-            id_lh: document.getElementById('lop_hoc').value // Thêm ID lớp học vào dữ liệu
+            id_lh: classSelect.value || null // Thêm ID lớp học vào dữ liệu, nếu không có thì là null
         };
 
         // Kiểm tra độ dài số điện thoại trước khi gửi
         if (teacherData.sdt_gv.length !== 10) {
             alert('Số điện thoại phải đúng 10 chữ số.');
             return;
+        }
+
+        // Kiểm tra xem giáo viên có lớp học không
+        const className = teacher.lop_hoc_ten || 'Chưa có lớp học'; // Lấy tên lớp học từ dữ liệu
+        if (teacher && teacher.id_lh && teacher.id_lh !== teacherData.id_lh) {
+            const confirmChange = confirm(`Giáo viên này đang dạy lớp học "${className}". Bạn có chắc chắn muốn thay đổi lớp học không?`);
+            if (!confirmChange) {
+                return; // Dừng lại nếu người dùng không xác nhận
+            }
         }
 
         // Gửi thông tin giáo viên đã cập nhật

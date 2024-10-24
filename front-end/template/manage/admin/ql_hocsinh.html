@@ -40,6 +40,8 @@
         <!-- Tìm kiếm và nút thêm học sinh -->
         <div class="header-controls">
             <button onclick="window.location.href='add_hs/add_hs.html'" class="btn-add">Thêm Học Sinh</button>
+            <button class="btn-add-excel" id="upload-excel-btn">Thêm Học Sinh từ File Excel</button>
+            <input type="file" id="upload-excel-input" accept=".xlsx, .xls" style="display: none;">
             <label for="search-input" style="display: none;">Tìm kiếm học sinh</label>
             <input type="text" id="search-input" placeholder="Tìm kiếm theo tên hoặc mã số học sinh">
         </div>
@@ -69,13 +71,14 @@
 <div class="popup-overlay" id="popup-overlay">
     <div class="popup">
         <div class="popup-image"></div>
-        <p>Bạn có chắc chắn muốn xóa giáo viên này?</p>
+        <p>Bạn có chắc chắn muốn xóa học sinh này?</p>
         <button class="btn-confirm" id="confirm-delete">Xóa</button>
         <button class="btn-cancel" id="cancel-delete">Hủy</button>
     </div>
 </div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 <script src="ql_hs.js"></script>
+<script src="add_excel.js"></script>
 <script src="log_out.js"></script>
 </body>
 </html>

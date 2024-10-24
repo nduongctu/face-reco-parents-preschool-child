@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles  # Nhập khẩu StaticFiles
+from fastapi.staticfiles import StaticFiles
 from backend.config import settings
 from backend.login import router as auth_router
 from backend.admin import router as admin_router
@@ -8,7 +8,6 @@ from backend.middleware import TokenExpiryMiddleware
 
 app = FastAPI()
 
-# Cấu hình CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,18 +16,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Cấu hình Middleware
 app.add_middleware(TokenExpiryMiddleware)
 
-# Đăng ký các router
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
 
-# Cấu hình phục vụ tệp tĩnh từ thư mục "images"
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
 
-# Dependency để cung cấp kết nối với cơ sở dữ liệu
 def get_db():
     db = SessionLocal()
     try:
@@ -37,7 +32,6 @@ def get_db():
         db.close()
 
 
-# Chạy ứng dụng FastAPI
 if __name__ == "__main__":
     import uvicorn
 

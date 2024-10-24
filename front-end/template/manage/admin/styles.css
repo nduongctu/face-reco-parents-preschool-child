@@ -70,7 +70,6 @@ ul li a i {
     font-size: 22px;
 }
 
-
 /* Main Content */
 .main-content {
     margin-left: 250px; /* Dịch nội dung chính sang phải để tránh sidebar trên màn hình lớn */
@@ -113,12 +112,6 @@ header h1 {
     font-size: 18px;
 }
 
-.user-info p {
-    margin: 0;
-    color: #999;
-    font-size: 16px;
-}
-
 /* Content */
 .content {
     margin-top: 30px;
@@ -128,31 +121,42 @@ header h1 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.button-container {
-    margin: 20px 0; /* Khoảng cách trên và dưới của nút */
-    text-align: center; /* Căn giữa nút trong container */
+/* Định kiểu cho phần điều khiển tiêu đề (nút thêm và ô tìm kiếm) */
+.header-controls {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px; /* Thay đổi khoảng cách nếu cần */
 }
 
-/* CSS cho nút */
-button {
-    background-color: #4CAF50; /* Màu nền của nút */
-    color: white; /* Màu chữ của nút */
-    border: none; /* Không viền */
-    padding: 10px 20px; /* Khoảng cách bên trong nút */
-    text-align: center; /* Căn giữa chữ trong nút */
-    text-decoration: none; /* Không gạch chân chữ */
-    display: inline-block; /* Hiển thị nút như một khối nội tuyến */
-    font-size: 16px; /* Kích thước chữ */
-    margin: 4px 2px; /* Khoảng cách xung quanh nút */
-    cursor: pointer; /* Con trỏ khi di chuột qua nút */
-    border-radius: 4px; /* Bo góc nút */
-    transition: background-color 0.3s ease; /* Hiệu ứng chuyển màu nền khi di chuột qua */
+/* Các nút thêm học sinh */
+.btn-add, .btn-add-excel {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 5px; /* Khoảng cách giữa các nút */
 }
 
-button:hover {
-    background-color: #45a049; /* Màu nền khi di chuột qua nút */
+.btn-add:hover, .btn-add-excel:hover {
+    background-color: #218838; /* Màu nền khi hover */
 }
 
+/* Ô tìm kiếm */
+#search-input {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
+    margin-left: 10px; /* Thêm khoảng cách bên trái ô tìm kiếm */
+}
+
+/* Bảng danh sách học sinh */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -177,36 +181,16 @@ tr:hover {
     background-color: #f1f1f1;
 }
 
-/* CSS cho nút thêm giáo viên */
-.btn-add {
-    display: inline-block;
-    padding: 10px 20px;
-    font-size: 16px;
-    color: #fff;
-    background-color: #28a745; /* Màu xanh lá cây cho nút thêm */
-    border: none;
-    border-radius: 5px;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.btn-add:hover {
-    background-color: #218838; /* Màu xanh lá cây đậm khi hover */
-}
-
 /* CSS cho nút chỉnh sửa */
 .btn-edit {
     display: inline-block;
     padding: 10px 20px;
     font-size: 16px;
     color: #fff;
-    background-color: #007bff; /* Màu xanh dương cho nút chỉnh sửa */
+    background-color: #007bff;
     border: none;
     border-radius: 5px;
     text-align: center;
-    text-decoration: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
@@ -268,7 +252,6 @@ tr:hover {
     padding: 10px 20px;
     border: none;
     border-radius: 5px;
-    cursor: pointer;
 }
 
 .popup .btn-confirm {
@@ -281,24 +264,7 @@ tr:hover {
     color: #fff;
 }
 
-/* Định kiểu cho phần điều khiển tiêu đề (nút thêm và ô tìm kiếm) */
-.header-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between; /* Đặt các phần tử ở hai đầu đối diện */
-    margin-bottom: 20px; /* Thay đổi khoảng cách nếu cần */
-}
-
-/* Ô tìm kiếm */
-#search-input {
-    padding: 8px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    max-width: 400px; /* Tùy chỉnh kích thước tối đa nếu cần */
-    width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
-}
-
+/* Logout button */
 .logout-button {
     background-color: #f44336; /* Màu đỏ */
     color: white; /* Màu chữ trắng */
