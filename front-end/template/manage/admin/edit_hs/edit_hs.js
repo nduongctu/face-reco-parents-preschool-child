@@ -107,9 +107,20 @@ function populateStudentForm(student) {
     document.getElementById('gioitinh_hs').value = student.gioitinh_hs;
     document.getElementById('ngaysinh_hs').value = student.ngaysinh_hs;
 
-    // Thiết lập ID lớp học vào select
     const classSelect = document.getElementById('lop_hoc_ten');
-    classSelect.value = student.lop_hoc_ten; // Đây là ID lớp học
+    classSelect.innerHTML = ''; // Xóa tất cả các tùy chọn hiện có
+
+    if (student.lop_hoc_ten) {
+        const option = document.createElement('option');
+        option.value = student.lop_hoc_ten;
+        option.textContent = student.lop_hoc_ten;
+        classSelect.appendChild(option);
+    } else {
+        const option = document.createElement('option');
+        option.textContent = 'Chưa có lớp';
+        option.disabled = true;
+        classSelect.appendChild(option);
+    }
 
     const parentContainer = document.getElementById("parent-container");
     student.phu_huynh.forEach(phuHuynh => {
@@ -156,7 +167,8 @@ async function updateStudentInfo(studentId, token) {
     const ten_hs = document.getElementById('ten_hs').value;
     const gioitinh_hs = document.getElementById('gioitinh_hs').value;
     const ngaysinh_hs = document.getElementById('ngaysinh_hs').value;
-    const lop_hoc_ten = document.getElementById('lop_hoc_ten').value; // Lấy ID lớp học
+
+    const lop_hoc_ten = document.getElementById('lop_hoc_ten').value; // Lấy giá trị lớp học
 
     const parentEntries = document.querySelectorAll(".parent-entry");
     const phu_huynh = [];
@@ -166,7 +178,6 @@ async function updateStudentInfo(studentId, token) {
         const gioiTinhPh = entry.querySelectorAll('select')[1].value; // Lấy giá trị giới tính
         let idPh = entry.querySelector('input[type="hidden"]').value; // Lấy ID phụ huynh
 
-        // Kiểm tra và chuyển đổi idPh từ chuỗi rỗng sang null nếu không có ID
         if (idPh === "") {
             idPh = null;
         }
@@ -210,8 +221,7 @@ async function updateStudentInfo(studentId, token) {
     }
 }
 
-// Hàm lấy danh sách lớp học và điền vào select
-async function fetchClasses() {
+async function fetchClasses(selectedClassName) {
     const apiUrlClasses = 'http://localhost:8000/admin/classes'; // Địa chỉ API lấy danh sách lớp học
     const classSelect = document.getElementById('lop_hoc_ten');
 
@@ -226,7 +236,7 @@ async function fetchClasses() {
         const classes = await response.json();
         classes.forEach(cls => {
             const option = document.createElement('option');
-            option.value = cls.id_lh; // Giá trị là ID lớp học
+            option.value = cls.lophoc; // Tên lớp học làm giá trị
             option.textContent = cls.lophoc; // Hiển thị tên lớp học
             classSelect.appendChild(option);
         });

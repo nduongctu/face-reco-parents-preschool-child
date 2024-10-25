@@ -433,15 +433,13 @@ def update_student_with_parents(db: Session, student_id: int, student_data: sche
     if student_data.ngaysinh_hs is not None:
         student.ngaysinh_hs = student_data.ngaysinh_hs
 
-    # Cập nhật lớp học nếu có ID lớp học
-    if student_data.lop_hoc_ten is not None:
-        # Lấy ID lớp học từ student_data
-        lop_hoc_id = int(student_data.lop_hoc_ten)  # Chuyển đổi ID lớp học thành số nguyên
-        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.id_lh == lop_hoc_id).first()  # Tìm lớp học theo ID
+    if student_data.lop_hoc_ten:
+        lop_hoc = db.query(models.LopHoc).filter(models.LopHoc.lophoc == student_data.lop_hoc_ten).first()
         if lop_hoc:
-            student.id_lh = lop_hoc.id_lh  # Cập nhật ID lớp học
+            if student.id_lh != lop_hoc.id_lh:
+                student.id_lh = lop_hoc.id_lh
         else:
-            raise HTTPException(status_code=404, detail="Lớp học không tồn tại")  # Lớp học không tồn tại
+            raise HTTPException(status_code=404, detail="Lớp học không tồn tại")
 
     # Lấy danh sách ID phụ huynh đã được gửi từ frontend
     updated_parent_ids = {phu_huynh.id_ph for phu_huynh in student_data.phu_huynh if phu_huynh.id_ph}
