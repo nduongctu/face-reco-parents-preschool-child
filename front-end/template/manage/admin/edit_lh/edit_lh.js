@@ -27,10 +27,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!classData) return;
 
     // Hiển thị thông tin lớp học vào biểu mẫu
-    await populateClassForm(classData, token); // Đợi cho quá trình điền form hoàn thành
+    await populateClassForm(classData); // Đợi cho quá trình điền form hoàn thành
 
-    // Lấy danh sách giáo viên và điền vào select
-    await fetchTeachers(token);
+    // Lấy danh sách giáo viên và lưu vào biến
+    const teachers = await fetchTeachers(token); // Lấy danh sách giáo viên từ API
 
     // Lấy danh sách năm học và điền vào select
     await fetchAcademicYears(token);
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Thêm sự kiện cho nút "Thêm Giáo Viên"
     document.getElementById("btn-add-teacher").addEventListener('click', async function () {
-        await addTeacherEntry(token); // Thêm phần nhập giáo viên mới
+        await addTeacherEntry(teachers); // Thêm phần nhập giáo viên mới với danh sách giáo viên
     });
 });
 
@@ -69,7 +69,7 @@ async function checkAccess(token) {
             return false;
         }
     } catch (error) {
-        console.error('Error fetching user info:', error);
+        console.error('Lỗi khi lấy thông tin người dùng:', error);
         alert('Có lỗi xảy ra! Vui lòng đăng nhập lại.');
         return false;
     }
@@ -101,74 +101,115 @@ async function fetchClassData(classId, token) {
 
         return await response.json();
     } catch (error) {
-        console.error('Error fetching class data:', error);
+        console.error('Lỗi khi lấy thông tin lớp học:', error);
         alert('Có lỗi xảy ra khi tải thông tin lớp học.');
         return null;
     }
 }
 
-// Hàm hiển thị thông tin lớp học vào biểu mẫu
-async function populateClassForm(classData, token) {
+async function populateClassForm(classData) {
+    // Điền thông tin lớp học vào form
     document.getElementById('id_lh').value = classData.id_lh; // ID lớp học
     document.getElementById('ten_lh').value = classData.lophoc; // Tên lớp
     document.getElementById('nam_hoc').value = classData.nam_hoc.id_nh; // Năm học
 
-    // Kiểm tra nếu existingTeachers là mảng và thêm giáo viên đã được chỉ định
-    const existingTeachers = classData.giao_vien || []; // Giả sử trường này chứa danh sách giáo viên
+    // Xóa tất cả phần nhập giáo viên cũ trước khi thêm mới
+    const teacherContainer = document.getElementById("teacher-container");
+    teacherContainer.innerHTML = ''; // Reset container
 
-    if (Array.isArray(existingTeachers)) {
-        for (const teacher of existingTeachers) {
-            const teacherEntry = createTeacherEntry(teacher.id_gv); // Tạo phần nhập cho giáo viên
-            document.getElementById("teacher-container").appendChild(teacherEntry);
-            await populateTeacherSelect(teacherEntry.querySelector('select'), token); // Đợi cho danh sách giáo viên được điền vào select
+    // Lấy danh sách giáo viên và điền vào select
+    await populateTeachersSelect(classData.giao_vien); // Sử dụng dữ liệu từ classData
+}
+
+async function populateTeachersSelect(teachers) {
+    const teacherContainer = document.getElementById("teacher-container");
+
+    // Thêm từng giáo viên vào form
+    if (Array.isArray(teachers) && teachers.length > 0) {
+        for (const teacher of teachers) {
+            const teacherEntry = createTeacherEntry(teacher.id_gv, teacher.ten_gv);
+            teacherContainer.appendChild(teacherEntry);
         }
     } else {
-        console.warn('existingTeachers không phải là mảng:', existingTeachers);
+        console.warn('Không có giáo viên nào được chỉ định cho lớp này.');
     }
 }
 
 // Hàm tạo phần nhập giáo viên
-function createTeacherEntry(teacherId = '') {
+function createTeacherEntry(teacherId = '', teacherName = '') {
     const teacherEntry = document.createElement("div");
     teacherEntry.classList.add("teacher-entry");
     teacherEntry.innerHTML = `
         <select name="giao_vien[]" required>
             <option value="">Chọn giáo viên</option>
-            <!-- Các giáo viên sẽ được thêm từ cơ sở dữ liệu -->
         </select>
         <button type="button" class="btn-remove-teacher">Xóa</button>
     `;
+
+    const teacherSelect = teacherEntry.querySelector('select');
+
+    // Nếu có tên giáo viên, thêm nó vào ô select
+    if (teacherName) {
+        const option = document.createElement('option');
+        option.value = teacherId; // Giá trị là ID giáo viên
+        option.textContent = teacherName; // Hiển thị tên giáo viên
+        teacherSelect.appendChild(option); // Thêm tên giáo viên vào select
+        teacherSelect.value = teacherId; // Đảm bảo ID giáo viên được chọn
+    }
+
     teacherEntry.querySelector('.btn-remove-teacher').addEventListener('click', () => {
         teacherEntry.remove();
     });
-
-    // Gán ID giáo viên nếu có
-    if (teacherId) {
-        const teacherSelect = teacherEntry.querySelector('select');
-        teacherSelect.value = teacherId; // Gán ID giáo viên vào select
-    }
 
     return teacherEntry;
 }
 
 // Hàm thêm phần nhập giáo viên mới
-async function addTeacherEntry(token) {
+async function addTeacherEntry(teachers) {
     const teacherContainer = document.getElementById("teacher-container");
-    const teacherEntry = createTeacherEntry();
-    teacherContainer.appendChild(teacherEntry);
+    const teacherEntry = createTeacherEntry(); // Tạo một ô nhập giáo viên mới
 
-    // Điền danh sách giáo viên vào select
-    await populateTeacherSelect(teacherEntry.querySelector('select'), token); // Đợi cho danh sách giáo viên được điền vào select
+    // Thêm danh sách giáo viên vào select cho phần mới thêm
+    const teacherSelect = teacherEntry.querySelector('select');
+    teachers.forEach(teacher => {
+        const option = document.createElement('option');
+        option.value = teacher.id_gv; // Giá trị là ID giáo viên
+        option.textContent = teacher.ten_gv; // Hiển thị tên giáo viên
+        teacherSelect.appendChild(option);
+    });
+
+    // Kiểm tra nếu giáo viên đã có lớp khác
+    teacherSelect.addEventListener('change', async (event) => {
+        const selectedTeacherId = event.target.value;
+
+        if (selectedTeacherId) {
+            const teacherData = await checkTeacherClass(selectedTeacherId);
+
+            if (teacherData && teacherData.id_lh !== null) { // Kiểm tra xem giáo viên đã có lớp nào chưa
+                const confirmChange = confirm(`Giáo viên ${teacherData.ten_gv} đã có lớp "${teacherData.lop_hoc_ten}". Bạn có muốn thay đổi không?`);
+                if (!confirmChange) {
+                    teacherSelect.value = ""; // Nếu không xác nhận, reset select
+                }
+            }
+        }
+    });
+
+    teacherContainer.appendChild(teacherEntry); // Thêm ô nhập vào container giáo viên
 }
 
-// Hàm cập nhật thông tin lớp học
+// Cập nhật thông tin lớp học
 async function updateClassInfo(classId, token) {
     const ten_lh = document.getElementById('ten_lh').value;
     const nam_hoc = document.getElementById('nam_hoc').value;
 
-    // Lấy danh sách giáo viên đã chọn
     const teacherSelects = document.querySelectorAll('select[name="giao_vien[]"]');
     const giao_vien = Array.from(teacherSelects).map(select => Number(select.value)).filter(value => value);
+
+    // Kiểm tra dữ liệu trước khi cập nhật
+    if (!ten_lh || !nam_hoc || giao_vien.length === 0) {
+        alert('Vui lòng điền đầy đủ thông tin lớp học và giáo viên.');
+        return;
+    }
 
     try {
         const response = await fetch(`http://localhost:8000/admin/classes/${classId}`, {
@@ -178,7 +219,7 @@ async function updateClassInfo(classId, token) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                id_lh: classId,  // Đảm bảo bạn bao gồm id_lh
+                id_lh: classId,
                 lophoc: ten_lh,
                 id_nh: Number(nam_hoc),
                 id_gv: giao_vien
@@ -190,7 +231,7 @@ async function updateClassInfo(classId, token) {
             window.location.href = '../ql_lophoc.html'; // Quay lại trang danh sách lớp học
         } else {
             const errorData = await response.json();
-            console.error('Error data:', errorData);
+            console.error('Dữ liệu lỗi:', errorData);
             alert(errorData.detail || 'Có lỗi xảy ra khi cập nhật thông tin.');
         }
     } catch (error) {
@@ -214,22 +255,13 @@ async function fetchTeachers(token) {
         if (!response.ok) {
             const errorData = await response.json();
             alert(errorData.detail || 'Lỗi khi lấy danh sách giáo viên');
-            return;
+            return [];
         }
 
-        const teachers = await response.json();
-        // Thêm giáo viên vào tất cả các select trong container
-        const teacherSelects = document.querySelectorAll('select[name="giao_vien[]"]');
-        teacherSelects.forEach(select => {
-            teachers.forEach(teacher => {
-                const option = document.createElement('option');
-                option.value = teacher.id_gv; // Giá trị là ID giáo viên
-                option.textContent = teacher.ten_gv; // Hiển thị tên giáo viên
-                select.appendChild(option);
-            });
-        });
+        return await response.json(); // Trả về danh sách giáo viên
     } catch (error) {
         console.error('Lỗi:', error);
+        return []; // Trả về danh sách giáo viên rỗng khi có lỗi
     }
 }
 
@@ -265,41 +297,26 @@ async function fetchAcademicYears(token) {
     }
 }
 
-// Hàm chuyển hướng đến trang đăng nhập
-function redirectToLogin() {
-    window.location.href = 'login.html';
-}
-
-// Hàm điền danh sách giáo viên vào select
-async function populateTeacherSelect(select, token) {
-    const apiUrlTeachers = 'http://localhost:8000/admin/teachers'; // Địa chỉ API lấy danh sách giáo viên
+async function checkTeacherClass(teacherId) {
+    const apiUrl = `http://localhost:8000/admin/teachers/${teacherId}`; // Địa chỉ API kiểm tra lớp của giáo viên
 
     try {
-        const response = await fetch(apiUrlTeachers, {
+        const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
-                'Authorization': `Bearer ${token}`
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            alert(errorData.detail || 'Lỗi khi lấy danh sách giáo viên');
-            return;
+            alert(errorData.detail || 'Lỗi khi lấy thông tin giáo viên.');
+            return null; // Nếu không lấy được thông tin, trả về null
         }
 
-        const teachers = await response.json();
-        // Xóa các option cũ trong select
-        select.innerHTML = '<option value="">Chọn giáo viên</option>'; // Reset danh sách
-
-        // Thêm giáo viên vào select
-        teachers.forEach(teacher => {
-            const option = document.createElement('option');
-            option.value = teacher.id_gv; // Giá trị là ID giáo viên
-            option.textContent = teacher.ten_gv; // Hiển thị tên giáo viên
-            select.appendChild(option);
-        });
+        return await response.json(); // Trả về thông tin giáo viên
     } catch (error) {
-        console.error('Lỗi:', error);
+        console.error('Lỗi khi kiểm tra lớp của giáo viên:', error);
+        return null; // Xử lý lỗi
     }
 }
