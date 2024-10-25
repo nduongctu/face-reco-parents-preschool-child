@@ -171,11 +171,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         classSelect.appendChild(option);
     });
 
-    // Cập nhật giá trị cho ô Lớp Học để hiển thị lớp hiện tại của giáo viên
     if (teacher && teacher.id_lh) {
         classSelect.value = teacher.id_lh; // Đặt giá trị của dropdown là lớp hiện tại của giáo viên
     } else {
-        // Nếu không có lớp học, tạo một tùy chọn "Chưa có lớp" cho dropdown
         const noClassOption = document.createElement('option');
         noClassOption.value = ''; // Giá trị trống
         noClassOption.textContent = 'Chưa có lớp';
@@ -205,21 +203,18 @@ document.addEventListener('DOMContentLoaded', async function () {
             return;
         }
 
-        // Kiểm tra xem giáo viên có lớp học không
-        const className = teacher.lop_hoc_ten || 'Chưa có lớp học'; // Lấy tên lớp học từ dữ liệu
+        const className = teacher.lop_hoc_ten || 'Chưa có lớp học';
         if (teacher && teacher.id_lh && teacher.id_lh !== teacherData.id_lh) {
             const confirmChange = confirm(`Giáo viên này đang dạy lớp học "${className}". Bạn có chắc chắn muốn thay đổi lớp học không?`);
             if (!confirmChange) {
-                return; // Dừng lại nếu người dùng không xác nhận
+                return;
             }
         }
 
-        // Gửi thông tin giáo viên đã cập nhật
         updateTeacherInfo(teacherData);
     });
 
-    // Giới hạn số điện thoại chỉ cho phép 10 chữ số
     document.getElementById('sdt_gv').addEventListener('input', function (e) {
-        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10); // Loại bỏ ký tự không phải số và giới hạn 10 số
+        e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
     });
 });
