@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, JSON
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from config import settings
 
@@ -115,6 +115,7 @@ class PhuHuynh_Images(Base):
     id_image = Column(Integer, primary_key=True, index=True)
     id_ph = Column(Integer, ForeignKey('PhuHuynh.id_ph'))
     image_path = Column(String(255), nullable=False)
+    vector = Column(JSON, nullable=True)  # Thêm cột lưu trữ vector embeddings dưới dạng JSON
 
     # Quan hệ với bảng PhuHuynh
     phu_huynh = relationship("PhuHuynh", back_populates="images")

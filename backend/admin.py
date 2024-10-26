@@ -337,3 +337,39 @@ def get_student_image(id_hs: int, db: Session = Depends(get_db)):
     image_url = f"http://localhost:8000/{image.image_path}"
 
     return schemas.StudentImageResponse(id_hs=image.id_hs, image_path=image_url)
+
+
+@router.post("/images/phu-huynh/{id_ph}/")
+async def upload_parent_image(id_ph: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    return await crud.upload_parent_image(db, id_ph, file)
+
+
+@router.get("/images/phu-huynh/{id_ph}/", response_model=List[schemas.PhuHuynhImageResponse])
+def get_all_parent_images(id_ph: int, db: Session = Depends(get_db)):
+    try:
+        images = crud.get_all_images_for_parent(db, id_ph)
+        if not images:
+            raise HTTPException(status_code=404, detail="Không tìm thấy ảnh nào cho phụ huynh này")
+
+        # Tạo URL cho tất cả ảnh
+        for image in images:
+            image.image_path = f"http://localhost:8000/{image.image_path}"
+
+        return images
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+
+@router.delete("/images/phu-huynh/{id_image}/")
+async def remove_parent_image(id_image: int, db: Session = Depends(get_db)):
+    try:
+        result = await crud.remove_parent_image(db, id_image)
+        return {"detail": "Ảnh đã được xóa thành công"}
+    except HTTPException as e:
+        # Xử lý lỗi không tìm thấy ảnh hoặc lỗi HTTP khác
+        raise e
+    except Exception as e:
+        # Xử lý lỗi hệ thống khác
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")

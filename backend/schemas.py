@@ -98,6 +98,19 @@ class StudentImageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PhuHuynhImageCreate(BaseModel):
+    id_ph: int
+    image_path: str
+
+
+class PhuHuynhImageResponse(BaseModel):
+    id_ph: int
+    image_path: str
+    vector: List[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class PhuHuynhFullUpdate(BaseModel):
     ten_ph: Optional[str] = None
     gioitinh_ph: Optional[str] = None
@@ -302,7 +315,6 @@ class NamHocResponse(NamHocBase):
     model_config = ConfigDict(from_attributes=True)
 
 
-# Cập nhật các forward references cho các mô hình Pydantic
 GiaoVienBase.update_forward_refs()
 LopHocBase.update_forward_refs()
 TaiKhoanBase.update_forward_refs()

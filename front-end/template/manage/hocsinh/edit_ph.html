@@ -6,11 +6,11 @@
     <title>Chỉnh Sửa Phụ Huynh</title>
     <link rel="stylesheet" href="edit_hs.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="img_ph.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="icon" href="../../images/logo_mini.png" type="image/png">
 </head>
 <body>
-<!-- Sidebar -->
 <div class="sidebar">
     <div class="logo">
         <img src="../../images/logo_mini.png" alt="Logo"/>
@@ -18,8 +18,8 @@
     <ul>
         <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Tổng Quan</a></li>
         <li><a href="phuhuynh.html" class="active"><i class="fas fa-user-graduate"></i>Phụ Huynh</a></li>
-        <li><a href="hocsinh.html"><i class="fas fa-book"></i>Tài Khoản</a></li>
-        <li><a href="matkhau.html"><i class="fas fa-user"></i>Mật Khẩu</a></li>
+        <li><a href="hocsinh.html"><i class="fas fa-book"></i>Học Sinh</a></li>
+        <li><a href="matkhau.html"><i class="fas fa-user-lock"></i>Mật Khẩu</a></li>
     </ul>
 </div>
 
@@ -40,8 +40,23 @@
 
     <!-- Edit Form -->
     <div class="content">
+        <div class="profile-pictures-section">
+            <form id="upload-profile-pictures-form" enctype="multipart/form-data">
+                <button type="button" class="btn-upload-picture" id="upload-picture-button">Thêm ảnh đại diện</button>
+                <input type="file" name="pictures" accept="image/*" hidden id="file-input" multiple>
+            </form>
+            <div class="uploaded-pictures" id="uploaded-pictures">
+                <!-- Ảnh sẽ được thêm vào đây qua JavaScript -->
+            </div>
+        </div>
+
+        <div class="guidelines">
+            <div>Vui lòng chọn ảnh nhỏ hơn 5MB</div>
+            <div>Chọn hình ảnh phù hợp, rõ khuôn mặt</div>
+        </div>
+
         <form id="edit-parent-form" enctype="multipart/form-data">
-            <input type="hidden" id="id_ph" name="id_ph"> <!-- ID phụ huynh ẩn -->
+            <input type="hidden" id="id_ph" name="id_ph">
 
             <div>
                 <label for="ten_ph">Họ Tên:</label>

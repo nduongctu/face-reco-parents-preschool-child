@@ -2,7 +2,11 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException, UploadFile, File, Depends
 from backend import models, schemas
 from passlib.context import CryptContext
-from typing import List, Optional
+from typing import List, Optional, Tuple
+from deepface import DeepFace
+import json
+import os
+from datetime import datetime
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -803,9 +807,10 @@ def delete_parent(db: Session, parent_id: int):
     db.delete(db_parent)
     db.commit()
 
-    # =======================
-    # Account CRUD Functions
-    # =======================
+
+# =======================
+# Account CRUD Functions
+# =======================
 
 
 def get_all_accounts(db: Session):
@@ -936,3 +941,79 @@ async def update_student_image(db: Session, id_hs: int, image_path: str):
         raise Exception(f"Không thể cập nhật hình ảnh: {str(e)}")
 
     return student_image
+
+
+async def calculate_vector(image_path: str) -> List:
+    result = DeepFace.represent(image_path, model_name='Facenet', enforce_detection=False)
+    vector = result[0]['embedding']
+
+    return vector
+
+
+async def calculate_facial_and_vector(image_path: str) -> Tuple[dict, List[float]]:
+    result = DeepFace.represent(image_path, model_name='Facenet', enforce_detection=False)
+    vector = result[0]['embedding']
+    facial_area = result[0]['facial_area'] if 'facial_area' in result[0] else None
+
+    return facial_area, vector
+
+
+async def upload_parent_image(db: Session, id_ph: int, file: UploadFile):
+    directory = "images/phu_huynh"
+    os.makedirs(directory, exist_ok=True)
+
+    # Tạo tên file với timestamp
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    file_location = f"{directory}/{timestamp}_{file.filename}"
+
+    try:
+        with open(file_location, "wb") as f:
+            f.write(await file.read())
+    except Exception as e:
+        raise Exception(f"Không thể lưu hình ảnh: {str(e)}")
+
+    # Tính toán vector từ ảnh bằng đường dẫn đến tệp hình ảnh
+    vector = await calculate_vector(file_location)
+
+    # Tạo mới bản ghi ảnh phụ huynh với vector
+    new_image = models.PhuHuynh_Images(id_ph=id_ph, image_path=file_location, vector=vector)
+    db.add(new_image)
+
+    try:
+        db.commit()
+        db.refresh(new_image)
+    except Exception as e:
+        db.rollback()
+        raise Exception(f"Không thể thêm hình ảnh vào cơ sở dữ liệu: {str(e)}")
+
+    return new_image
+
+
+async def remove_parent_image(db: Session, id_image: int):
+    image_record = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_image == id_image).first()
+
+    if not image_record:
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+
+    try:
+        os.remove(image_record.image_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Không thể xóa file: {str(e)}")
+
+    db.delete(image_record)
+
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Không thể xóa ảnh trong cơ sở dữ liệu: {str(e)}")
+
+    return {"detail": "Ảnh đã được xóa thành công"}
+
+
+def get_all_images_for_parent(db: Session, id_ph: int):
+    try:
+        images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == id_ph).all()
+        return images
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
