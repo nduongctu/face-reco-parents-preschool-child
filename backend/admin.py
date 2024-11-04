@@ -1,16 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Body
 from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, Time
 from sqlalchemy.orm import sessionmaker
 from typing import List, Optional
 from backend import models, schemas
 from backend.config import settings
 from backend import crud
 from passlib.context import CryptContext
-from datetime import datetime
+from datetime import datetime, date
 import logging
 import shutil
 import os
+import base64
+from io import BytesIO
+from PIL import Image
+from sklearn.metrics.pairwise import euclidean_distances
+from collections import Counter
+import numpy as np
+from fastapi.responses import JSONResponse
 
 # Tạo engine và session để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -368,8 +375,188 @@ async def remove_parent_image(id_image: int, db: Session = Depends(get_db)):
         result = await crud.remove_parent_image(db, id_image)
         return {"detail": "Ảnh đã được xóa thành công"}
     except HTTPException as e:
-        # Xử lý lỗi không tìm thấy ảnh hoặc lỗi HTTP khác
         raise e
     except Exception as e:
         # Xử lý lỗi hệ thống khác
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+
+@router.post("/create", response_model=schemas.DiemDanhResponseWithMessage)
+async def create_diemdanh(
+        diem_danh_data: schemas.DiemDanhCreate,
+        db: Session = Depends(get_db)
+):
+    try:
+        # Kiểm tra xem học sinh đã có bản ghi điểm danh trong ngày này chưa
+        existing_record = db.query(models.DiemDanh).filter(
+            models.DiemDanh.id_hs == diem_danh_data.id_hs,
+            models.DiemDanh.ngay == diem_danh_data.ngay
+        ).first()
+
+        if existing_record:
+            # Nếu đã có bản ghi, trả về thông báo rằng học sinh đã được điểm danh
+            return schemas.DiemDanhResponseWithMessage(
+                message="Học sinh đã được điểm danh trong ngày hôm nay.",
+                data=schemas.DiemDanhResponse(
+                    id=existing_record.id,
+                    id_hs=existing_record.id_hs,
+                    id_lh=existing_record.id_lh,
+                    ngay=existing_record.ngay,
+                    gio_vao=existing_record.gio_vao,
+                    gio_ra=existing_record.gio_ra,
+                    id_ph_don=existing_record.id_ph_don
+                )
+            )
+        else:
+            # Nếu chưa có bản ghi, tạo mới
+            new_diemdanh = models.DiemDanh(
+                id_hs=diem_danh_data.id_hs,
+                id_lh=diem_danh_data.id_lh,
+                ngay=diem_danh_data.ngay,
+                gio_vao=diem_danh_data.gio_vao
+            )
+            db.add(new_diemdanh)
+            db.commit()  # Lưu vào cơ sở dữ liệu
+            db.refresh(new_diemdanh)  # Làm mới đối tượng để lấy ID
+
+            # Trả về đối tượng DiemDanhResponse trong DiemDanhResponseWithMessage
+            return schemas.DiemDanhResponseWithMessage(
+                message="Điểm danh thành công.",
+                data=schemas.DiemDanhResponse(
+                    id=new_diemdanh.id,
+                    id_hs=new_diemdanh.id_hs,
+                    id_lh=new_diemdanh.id_lh,
+                    ngay=new_diemdanh.ngay,
+                    gio_vao=new_diemdanh.gio_vao,
+                    gio_ra=new_diemdanh.gio_ra,
+                    id_ph_don=new_diemdanh.id_ph_don  # Nếu có trường này trong mô hình
+                )
+            )
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Không thể tạo điểm danh: {str(e)}")
+
+
+@router.post("/recognize", response_model=schemas.RecognitionResult)
+async def recognize(
+        frame: dict,
+        id_hs_list: list[int],
+        euclid_threshold: float,
+        db: Session = Depends(get_db)
+):
+    try:
+        # Giải mã frame từ base64 thành ảnh
+        frame_data = frame.get("frame")
+        if not frame_data:
+            raise HTTPException(status_code=400, detail="Không có frame trong yêu cầu")
+
+        image_data = frame_data.split(',')[1]
+        image_bytes = base64.b64decode(image_data)
+        image = Image.open(BytesIO(image_bytes))
+        if image.mode == 'RGBA':
+            image = image.convert('RGB')
+        temp_image_path = "temp_image.jpg"
+        image.save(temp_image_path)
+
+        # Trích xuất vector từ ảnh
+        input_vector = await crud.calculate_vector(temp_image_path)
+
+        # Lấy vector của phụ huynh từ id_hs_list
+        vectors = []
+        for id_hs in id_hs_list:
+            vectors.extend(await crud.get_vectors_by_student_id(db, id_hs))
+
+        # Danh sách để lưu các vector phù hợp
+        distances = []
+        for vector_info in vectors:
+            vector = np.array(vector_info['vector'])
+            distance = euclidean_distances(input_vector.reshape(1, -1), vector.reshape(1, -1))[0][0]
+            if distance < euclid_threshold:
+                distances.append({
+                    "id_ph": vector_info['id_ph'],
+                    "image_path": vector_info['image_path'],
+                    "distance": distance
+                })
+
+        if not distances:
+            return JSONResponse(content={"success": False, "message": "Không có vector nào dưới ngưỡng."})
+
+        # Tìm vector gần nhất và kiểm tra tần suất xuất hiện của `id_ph`
+        top_5_matches = sorted(distances, key=lambda x: x['distance'])[:5]
+        id_ph_counts = Counter(match['id_ph'] for match in top_5_matches)
+        common_id_ph = [id_ph for id_ph, count in id_ph_counts.items() if count >= 2]
+
+        # Chọn id_ph đón
+        if common_id_ph:
+            best_match_id = common_id_ph[0]
+            best_match = next(match for match in top_5_matches if match['id_ph'] == best_match_id)
+        else:
+            best_match = top_5_matches[0]
+
+        recognized_id_ph = best_match['id_ph']
+
+        # Kiểm tra bản ghi điểm danh của học sinh trong ngày hôm nay
+        today = datetime.now().date()
+        current_time = datetime.now().time()
+
+        diem_danh_record = db.query(models.DiemDanh).filter(
+            models.DiemDanh.id_hs == id_hs_list[0],
+            models.DiemDanh.ngay == today
+        ).first()
+
+        # Nếu bản ghi đã có `gio_ra`, trả về lỗi
+        if diem_danh_record:
+            if diem_danh_record.gio_ra is not None:
+                raise HTTPException(status_code=400, detail="Học sinh đã được đón trong ngày hôm nay.")
+
+            # Nếu chưa có `gio_ra`, cập nhật giờ ra và id_ph_don
+            diem_danh_record.id_ph_don = recognized_id_ph
+            diem_danh_record.gio_ra = current_time
+        else:
+            # Nếu chưa có bản ghi, trả về lỗi hoặc tạo mới nếu muốn
+            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi điểm danh cho học sinh trong ngày.")
+
+        db.commit()
+
+        # Lấy tên phụ huynh từ cơ sở dữ liệu
+        parent_record = db.query(models.PhuHuynh).filter(models.PhuHuynh.id_ph == recognized_id_ph).first()
+        parent_name = parent_record.ten_ph if parent_record else "Không xác định"
+
+        # Trả về kết quả nhận dạng
+        return schemas.RecognitionResult(
+            success=True,
+            message=f"Nhận dạng thành công! {parent_name}",
+            data={
+                "id_ph": recognized_id_ph,
+                "image_path": best_match['image_path'],
+                "distance": best_match['distance']
+            }
+        )
+
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+
+@router.get("/diem-danh", response_model=schemas.DiemDanhResponseList)
+async def get_diem_danh_api(
+        id_lh: int,
+        ngay: str,
+        db: Session = Depends(get_db)
+):
+    try:
+        ngay_date = datetime.strptime(ngay, "%Y-%m-%d").date()
+
+        diem_danh_details = crud.get_diem_danh(db, id_lh, ngay_date)
+
+        # Nếu không có kết quả nào, trả về lỗi 404
+        if not diem_danh_details:
+            raise HTTPException(status_code=404, detail="Không tìm thấy điểm danh cho lớp học và ngày đã chỉ định.")
+
+        return schemas.DiemDanhResponseList(data=diem_danh_details)
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Ngày không đúng định dạng. Định dạng đúng là YYYY-MM-DD.")

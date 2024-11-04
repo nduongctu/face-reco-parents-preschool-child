@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nhận Dạng</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="div.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <link rel="icon" href="../../images/logo_mini.png" type="image/png">
 </head>
@@ -19,14 +20,11 @@
         <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
         <li><a href="nhandang.html" class="active"><i class="fas fa-book"></i>Nhận Dạng</a></li>
         <li><a href="taikhoan.html"><i class="fas fa-user-lock"></i>Mật Khẩu</a></li>
-
     </ul>
-
 </div>
 
 <!-- Main Content -->
 <div class="main-content">
-    <!-- Header -->
     <header>
         <h1>Nhận Dạng</h1>
         <div class="user-info">
@@ -36,12 +34,70 @@
         </div>
     </header>
 
-    <!-- Dashboard Content -->
     <div class="content">
-        <!-- Add your content here -->
+        <div class="container">
+            <div class="student-list-section">
+                <h2>Danh Sách </h2>
+                <br>
+                <!-- Ô tìm kiếm học sinh -->
+                <input type="text" id="search-input" placeholder="Tìm kiếm học sinh...">
+
+                <table id="student-table">
+                    <thead>
+                    <tr>
+                        <th>Tên</th>
+                        <th>Giới Tính</th>
+                        <th class="confirm-column">Xác Nhận</th>
+                    </tr>
+                    </thead>
+                    <tbody id="student-list"></tbody>
+                </table>
+            </div>
+
+            <div class="camera-section">
+                <h2>Camera Nhận Dạng</h2>
+                <div style="position: relative; width: 720px; height: 560px;">
+                    <video id="video" width="720" height="560" autoplay muted></video>
+                    <canvas id="overlay"
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                </div>
+                <div class="sliders">
+                    <label for="detection-threshold">Ngưỡng Phát Hiện Khuôn Mặt:</label>
+                    <input type="range" id="detection-threshold" min="0.5" max="0.99" step="0.01" value="0.85">
+                    <span id="detection-value">0.85</span>
+
+                    <label for="match-threshold">Ngưỡng Nhận Dạng:</label>
+                    <input type="range" id="match-threshold" min="3" max="10" step="0.5" value="6">
+                    <span id="match-value">6</span>
+                </div>
+            </div>
+
+            <div class="results-section">
+                <h2 id="attendance-title">Danh Sách Học Sinh Có Mặt Ngày:</h2>
+                <div class="date-search-container">
+                    <input type="date" id="date-picker"/>
+                    <input type="text" id="search-attendance-input" placeholder="Tìm kiếm học sinh..."/>
+                </div>
+                <table id="attendance-table">
+                    <thead>
+                    <tr>
+                        <th>Tên Học Sinh</th>
+                        <th>Giờ Vào</th>
+                        <th>Giờ Ra</th>
+                        <th>Phụ Huynh</th>
+                        <th>Quan Hệ</th>
+                    </tr>
+                    </thead>
+                    <tbody id="recognition-results"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
-<script src="giaovien.js"></script>
+
+<script src="face-api.min.js"></script>
 <script src="log_out.js"></script>
+<script src="ds_hs.js"></script>
+<script src="camera.js"></script>
 </body>
 </html>

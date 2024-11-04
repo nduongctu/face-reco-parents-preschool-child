@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, JSON
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, JSON, Time
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from config import settings
 
@@ -42,6 +42,7 @@ class HocSinh(Base):
     tai_khoan = relationship("TaiKhoan", back_populates="hoc_sinh")
     phu_huynhs = relationship("PhuHuynh_HocSinh", back_populates="hoc_sinh")
     images = relationship("HocSinhImages", back_populates="hoc_sinh")
+    diem_danhs = relationship("DiemDanh", back_populates="hoc_sinh")
 
 
 # Mô hình NamHoc
@@ -65,6 +66,7 @@ class LopHoc(Base):
     giao_viens = relationship("GiaoVien", back_populates="lop_hoc")  # Một lớp có nhiều giáo viên
     hoc_sinhs = relationship("HocSinh", back_populates="lop_hoc")  # Một lớp có nhiều học sinh
     nam_hoc = relationship("NamHoc", back_populates="lop_hocs")
+    lop_diem_danhs = relationship("DiemDanh", back_populates="lop_hoc")
 
 
 # Mô hình PhuHuynh
@@ -80,6 +82,7 @@ class PhuHuynh(Base):
 
     phu_hoc_sinh = relationship("PhuHuynh_HocSinh", back_populates="phu_huynh")
     images = relationship("PhuHuynh_Images", back_populates="phu_huynh")
+    diem_danh_don = relationship("DiemDanh", back_populates="phu_huynh_don")
 
 
 # Mô hình PhuHuynh_HocSinh
@@ -143,3 +146,20 @@ class HocSinhImages(Base):  # Đổi tên lớp cho phù hợp với quy ước 
 
     # Quan hệ với bảng HocSinh
     hoc_sinh = relationship("HocSinh", back_populates="images")
+
+
+class DiemDanh(Base):
+    __tablename__ = 'DiemDanh'
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    id_hs = Column(Integer, ForeignKey('HocSinh.id_hs'), nullable=False)
+    id_lh = Column(Integer, ForeignKey('LopHoc.id_lh'), nullable=False)
+    ngay = Column(Date, nullable=False)
+    gio_vao = Column(Time, nullable=True)  # Chỉ lưu giờ vào, không cần nhận dạng
+    gio_ra = Column(Time, nullable=True)  # Giờ ra về
+    id_ph_don = Column(Integer, ForeignKey('PhuHuynh.id_ph'), nullable=True)  # ID phụ huynh đón (chỉ khi ra về)
+
+    # Relationships
+    hoc_sinh = relationship("HocSinh", back_populates="diem_danhs")
+    lop_hoc = relationship("LopHoc", back_populates="lop_diem_danhs")
+    phu_huynh_don = relationship("PhuHuynh", back_populates="diem_danh_don")

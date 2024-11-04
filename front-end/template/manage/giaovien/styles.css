@@ -271,7 +271,21 @@ tr:hover {
     cursor: pointer;
 }
 
-.popup .btn-confirm {
+.btn-confirm {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-confirm img {
+    width: 30px; /* Chiều rộng của ảnh tick */
+    height: 30px; /* Chiều cao của ảnh tick */
+}
+
+.popup . {
     background-color: #dc3545; /* Màu đỏ cho nút xác nhận */
     color: #fff;
 }
@@ -295,8 +309,8 @@ tr:hover {
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    max-width: 400px; /* Tùy chỉnh kích thước tối đa nếu cần */
-    width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
+    max-width: 250px; /* Tùy chỉnh kích thước tối đa nếu cần */
+    width: 200px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
 }
 
 .logout-button {

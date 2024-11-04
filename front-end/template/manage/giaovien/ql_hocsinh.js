@@ -88,7 +88,7 @@ async function fetchUserRole(token) {
         if (!response.ok) {
             const errorData = await response.json();
             alert(errorData.detail || 'Không có quyền truy cập hoặc token không hợp lệ! Vui lòng đăng nhập lại.');
-            return null; // Trả về null nếu có lỗi
+            return null;
         }
 
         const data = await response.json();
@@ -111,7 +111,7 @@ async function fetchAndDisplayStudents(apiUrl) {
         const students = await response.json();
 
         const tableBody = document.getElementById('student-list');
-        tableBody.innerHTML = ''; // Xóa nội dung bảng trước khi thêm dữ liệu mới
+        tableBody.innerHTML = '';
 
         students.forEach(student => {
             const row = createStudentRow(student);
@@ -147,7 +147,7 @@ function createStudentRow(student) {
     return row;
 }
 
-// Hàm để chuyển đổi định dạng ngày từ yyyy-mm-dd sang dd-mm-yyyy
+
 function formatDate(inputDate) {
     const [year, month, day] = inputDate.split("-");
     return `${day}-${month}-${year}`;

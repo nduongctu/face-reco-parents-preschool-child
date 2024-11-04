@@ -6,7 +6,9 @@ from typing import List, Optional, Tuple
 from deepface import DeepFace
 import json
 import os
-from datetime import datetime
+from datetime import datetime, date, time
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -943,11 +945,10 @@ async def update_student_image(db: Session, id_hs: int, image_path: str):
     return student_image
 
 
-async def calculate_vector(image_path: str) -> List:
+async def calculate_vector(image_path: str) -> np.ndarray:
     result = DeepFace.represent(image_path, model_name='Facenet', enforce_detection=False)
     vector = result[0]['embedding']
-
-    return vector
+    return np.array(vector)  # Chuyển đổi thành numpy array
 
 
 async def calculate_facial_and_vector(image_path: str) -> Tuple[dict, List[float]]:
@@ -1017,3 +1018,53 @@ def get_all_images_for_parent(db: Session, id_ph: int):
         return images
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+
+async def get_vectors_by_student_id(db: Session, id_hs: int):
+    # Lấy tất cả phụ huynh liên quan đến học sinh với id_hs
+    parent_students = db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_hs == id_hs).all()
+
+    vectors = []
+    for parent in parent_students:
+        # Lấy hình ảnh phụ huynh từ PhuHuynh_Images
+        images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == parent.id_ph).all()
+        for image in images:
+            vectors.append({
+                "id_ph": parent.id_ph,
+                "image_path": image.image_path,
+                "vector": image.vector  # Vector sẽ là một danh sách
+            })
+
+    return vectors
+
+
+def get_diem_danh(db: Session, id_lh: int, ngay: date):
+    results = db.query(
+        models.DiemDanh,
+        models.HocSinh.ten_hs.label("ho_ten_hoc_sinh"),
+        models.PhuHuynh.ten_ph.label("ten_phu_huynh"),
+        models.PhuHuynh_HocSinh.quanhe.label("quan_he")
+    ).join(models.HocSinh, models.DiemDanh.id_hs == models.HocSinh.id_hs) \
+        .outerjoin(models.PhuHuynh_HocSinh, (models.DiemDanh.id_hs == models.PhuHuynh_HocSinh.id_hs) &
+                   (models.DiemDanh.id_ph_don == models.PhuHuynh_HocSinh.id_ph)) \
+        .outerjoin(models.PhuHuynh, models.DiemDanh.id_ph_don == models.PhuHuynh.id_ph) \
+        .filter(models.DiemDanh.id_lh == id_lh, models.DiemDanh.ngay == ngay) \
+        .all()
+
+    diem_danh_details = []
+    seen_students = set()
+
+    for result in results:
+        student_key = (result.ho_ten_hoc_sinh, result.DiemDanh.gio_vao, result.DiemDanh.gio_ra)
+
+        if student_key not in seen_students:
+            seen_students.add(student_key)
+            diem_danh_details.append(schemas.DiemDanhDetail(
+                ho_ten_hoc_sinh=result.ho_ten_hoc_sinh,
+                gio_vao=result.DiemDanh.gio_vao.strftime("%H:%M:%S") if result.DiemDanh.gio_vao else "Chưa xác định",
+                gio_ra=result.DiemDanh.gio_ra.strftime("%H:%M:%S") if result.DiemDanh.gio_ra else "Chưa xác định",
+                ten_phu_huynh=result.ten_phu_huynh if result.ten_phu_huynh else "Không có phụ huynh",
+                quan_he=result.quan_he if result.quan_he else "Không xác định"
+            ))
+
+    return diem_danh_details

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional, List
-from datetime import date
+from datetime import date, time
 
 
 # Định nghĩa các lớp Pydantic
@@ -103,6 +103,10 @@ class PhuHuynhImageCreate(BaseModel):
     image_path: str
 
 
+class FrameData(BaseModel):
+    frame: str
+
+
 class PhuHuynhImageResponse(BaseModel):
     id_ph: int
     image_path: str
@@ -149,6 +153,18 @@ class GiaoVienCreate(BaseModel):
     quyen: int  # Quyền
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class BestMatch(BaseModel):
+    id_ph: int
+    image_path: str
+    distance: float
+
+
+class RecognitionResult(BaseModel):
+    success: bool
+    message: str
+    data: Optional[BestMatch]
 
 
 class GiaoVienUpdate(BaseModel):
@@ -313,6 +329,42 @@ class NamHocResponse(NamHocBase):
     id_nh: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class DiemDanhCreate(BaseModel):
+    id_hs: int
+    id_lh: int
+    ngay: date
+    gio_vao: time
+
+
+class DiemDanhResponse(BaseModel):
+    id: int
+    id_hs: int
+    id_lh: int
+    ngay: date
+    gio_vao: time
+    gio_ra: Optional[time] = None
+    id_ph_don: Optional[int] = None
+
+
+class DiemDanhResponseWithMessage(BaseModel):
+    message: str
+    data: DiemDanhResponse
+
+
+class DiemDanhDetail(BaseModel):
+    ho_ten_hoc_sinh: str
+    gio_vao: Optional[str]
+    gio_ra: Optional[str]
+    ten_phu_huynh: str
+    quan_he: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DiemDanhResponseList(BaseModel):
+    data: List[DiemDanhDetail]
 
 
 GiaoVienBase.update_forward_refs()
