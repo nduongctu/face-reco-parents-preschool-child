@@ -11,6 +11,7 @@ from datetime import datetime, date
 import logging
 import shutil
 import os
+import json
 import base64
 from io import BytesIO
 from PIL import Image
@@ -358,11 +359,25 @@ def get_all_parent_images(id_ph: int, db: Session = Depends(get_db)):
         if not images:
             raise HTTPException(status_code=404, detail="Không tìm thấy ảnh nào cho phụ huynh này")
 
-        # Tạo URL cho tất cả ảnh
+        # Chuyển đổi dữ liệu trước khi trả về
+        response_images = []
         for image in images:
-            image.image_path = f"http://localhost:8000/{image.image_path}"
+            # Kiểm tra kiểu dữ liệu của vector
+            if isinstance(image.vector, str):
+                vector_data = json.loads(image.vector) if image.vector else []
+            elif isinstance(image.vector, list):
+                vector_data = image.vector
+            else:
+                vector_data = []
 
-        return images
+            response_image = {
+                "id_ph": image.id_ph,
+                "image_path": image.image_path,
+                "vector": vector_data
+            }
+            response_images.append(response_image)
+
+        return response_images
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -456,6 +471,8 @@ async def recognize(
         image = Image.open(BytesIO(image_bytes))
         if image.mode == 'RGBA':
             image = image.convert('RGB')
+
+        # Lưu ảnh tạm thời để trích xuất vector
         temp_image_path = "temp_image.jpg"
         image.save(temp_image_path)
 
@@ -467,11 +484,19 @@ async def recognize(
         for id_hs in id_hs_list:
             vectors.extend(await crud.get_vectors_by_student_id(db, id_hs))
 
-        # Danh sách để lưu các vector phù hợp
+        if not vectors:
+            return JSONResponse(content={"success": False, "message": "Không tìm thấy vector nào cho học sinh."})
+
         distances = []
         for vector_info in vectors:
-            vector = np.array(vector_info['vector'])
+            # Chuyển đổi vector từ JSON string về dạng ndarray
+            vector = np.array(json.loads(vector_info['vector']))
+
+            # Tính khoảng cách Euclid
             distance = euclidean_distances(input_vector.reshape(1, -1), vector.reshape(1, -1))[0][0]
+            print(
+                f"ID Phụ Huynh: {vector_info['id_ph']}, Đường dẫn ảnh: {vector_info['image_path']}, Khoảng cách: {distance}")
+
             if distance < euclid_threshold:
                 distances.append({
                     "id_ph": vector_info['id_ph'],
@@ -482,8 +507,14 @@ async def recognize(
         if not distances:
             return JSONResponse(content={"success": False, "message": "Không có vector nào dưới ngưỡng."})
 
-        # Tìm vector gần nhất và kiểm tra tần suất xuất hiện của `id_ph`
         top_5_matches = sorted(distances, key=lambda x: x['distance'])[:5]
+
+        # In thông tin của top 5
+        print("Top 5 kết quả nhận diện:")
+        for match in top_5_matches:
+            print(
+                f"ID Phụ Huynh: {match['id_ph']}, Đường dẫn ảnh: {match['image_path']}, Khoảng cách: {match['distance']}")
+
         id_ph_counts = Counter(match['id_ph'] for match in top_5_matches)
         common_id_ph = [id_ph for id_ph, count in id_ph_counts.items() if count >= 2]
 
@@ -500,22 +531,40 @@ async def recognize(
         today = datetime.now().date()
         current_time = datetime.now().time()
 
+        # Lấy danh sách ID học sinh liên quan đến ID phụ huynh đã nhận diện
+        related_students = db.query(models.PhuHuynh_HocSinh.id_hs).filter(
+            models.PhuHuynh_HocSinh.id_ph == recognized_id_ph
+        ).all()
+
+        if not related_students:
+            raise HTTPException(status_code=404, detail="Không tìm thấy học sinh nào liên quan đến phụ huynh này.")
+
+        # Chỉ lấy một học sinh duy nhất
+        id_hs = related_students[0].id_hs  # Lấy ID học sinh đầu tiên
+        student_record = db.query(models.HocSinh).filter(models.HocSinh.id_hs == id_hs).first()
+
+        if not student_record:
+            raise HTTPException(status_code=404, detail="Không tìm thấy học sinh.")
+
+        # Kiểm tra bản ghi điểm danh của học sinh trong ngày hôm nay
         diem_danh_record = db.query(models.DiemDanh).filter(
-            models.DiemDanh.id_hs == id_hs_list[0],
+            models.DiemDanh.id_hs == id_hs,
             models.DiemDanh.ngay == today
         ).first()
 
         # Nếu bản ghi đã có `gio_ra`, trả về lỗi
         if diem_danh_record:
             if diem_danh_record.gio_ra is not None:
-                raise HTTPException(status_code=400, detail="Học sinh đã được đón trong ngày hôm nay.")
+                raise HTTPException(status_code=400,
+                                    detail=f"Học sinh {student_record.ten_hs} đã được đón trong ngày hôm nay.")
 
-            # Nếu chưa có `gio_ra`, cập nhật giờ ra và id_ph_don
+        # Cập nhật hoặc tạo mới bản ghi điểm danh
+        if diem_danh_record:
             diem_danh_record.id_ph_don = recognized_id_ph
             diem_danh_record.gio_ra = current_time
         else:
-            # Nếu chưa có bản ghi, trả về lỗi hoặc tạo mới nếu muốn
-            raise HTTPException(status_code=404, detail="Không tìm thấy bản ghi điểm danh cho học sinh trong ngày.")
+            new_record = models.DiemDanh(id_hs=id_hs, ngay=today, id_ph_don=recognized_id_ph, gio_ra=current_time)
+            db.add(new_record)
 
         db.commit()
 
@@ -526,7 +575,7 @@ async def recognize(
         # Trả về kết quả nhận dạng
         return schemas.RecognitionResult(
             success=True,
-            message=f"Nhận dạng thành công! {parent_name}",
+            message=f"Nhận dạng thành công! {parent_name} đã đón học sinh {student_record.ten_hs}.",
             data={
                 "id_ph": recognized_id_ph,
                 "image_path": best_match['image_path'],
@@ -537,7 +586,7 @@ async def recognize(
     except HTTPException as e:
         raise e
     except Exception as e:
-        db.rollback()
+        db.rollback()  # Đảm bảo rollback trong trường hợp lỗi
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
 
 

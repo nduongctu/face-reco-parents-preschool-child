@@ -783,8 +783,15 @@ def update_parent(db: Session, parent_id: int, parent: schemas.PhuHuynhFullUpdat
     if not db_parent:
         raise HTTPException(status_code=404, detail="Không tìm thấy phụ huynh")
 
+    # Cập nhật thông tin phụ huynh
     for key, value in parent.dict(exclude_unset=True).items():
         setattr(db_parent, key, value)
+
+    # Cập nhật quan hệ nếu có
+    if 'quanhe' in parent.dict(exclude_unset=True):
+        ph_hs_relation = db.query(models.PhuHuynh_HocSinh).filter_by(id_ph=parent_id).first()
+        if ph_hs_relation:
+            ph_hs_relation.quanhe = parent.quanhe  # Cập nhật quan hệ
 
     db.commit()
     db.refresh(db_parent)
@@ -967,6 +974,7 @@ async def upload_parent_image(db: Session, id_ph: int, file: UploadFile):
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_location = f"{directory}/{timestamp}_{file.filename}"
 
+    # Lưu file vào ổ đĩa
     try:
         with open(file_location, "wb") as f:
             f.write(await file.read())
@@ -976,10 +984,14 @@ async def upload_parent_image(db: Session, id_ph: int, file: UploadFile):
     # Tính toán vector từ ảnh bằng đường dẫn đến tệp hình ảnh
     vector = await calculate_vector(file_location)
 
-    # Tạo mới bản ghi ảnh phụ huynh với vector
-    new_image = models.PhuHuynh_Images(id_ph=id_ph, image_path=file_location, vector=vector)
+    # **Chuyển vector từ ndarray thành JSON string**
+    vector_json = json.dumps(vector.tolist())  # Dòng này là thay đổi quan trọng
+
+    # Tạo mới bản ghi ảnh phụ huynh với vector đã được chuyển thành JSON
+    new_image = models.PhuHuynh_Images(id_ph=id_ph, image_path=file_location, vector=vector_json)
     db.add(new_image)
 
+    # Thực hiện commit để lưu vào cơ sở dữ liệu
     try:
         db.commit()
         db.refresh(new_image)
@@ -1015,6 +1027,17 @@ async def remove_parent_image(db: Session, id_image: int):
 def get_all_images_for_parent(db: Session, id_ph: int):
     try:
         images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == id_ph).all()
+        if not images:
+            raise HTTPException(status_code=404, detail="Không tìm thấy ảnh nào cho phụ huynh này")
+
+        # Tạo URL cho tất cả ảnh và chuyển đổi vector nếu cần
+        for image in images:
+            if isinstance(image.vector, str):
+                # Chuyển đổi chuỗi JSON thành danh sách
+                image.vector = json.loads(image.vector) if image.vector else []
+            # Tạo URL cho ảnh
+            image.image_path = f"http://localhost:8000/{image.image_path}"
+
         return images
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
