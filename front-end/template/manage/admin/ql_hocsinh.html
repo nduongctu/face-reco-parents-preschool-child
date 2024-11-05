@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Học Sinh</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
+        <li><a href="ql_giaovien.html"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
+        <li><a href="ql_hocsinh.html" class="active"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
+        <li><a href="ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
+        <li><a href="ql_taikhoan.html"><i class="fas fa-user-lock"></i>Tài Khoản</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <h1>Danh Sách Học Sinh</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User"/>
+            <span>Admin</span>
+            <a href="#" class="logout-button" id="logout-button">Đăng xuất</a>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="content">
+        <!-- Tìm kiếm và nút thêm học sinh -->
+        <div class="header-controls">
+            <button onclick="window.location.href='add_hs/add_hs.html'" class="btn-add">Thêm Học Sinh</button>
+            <button class="btn-add-excel" id="upload-excel-btn">Thêm Học Sinh từ File Excel</button>
+            <input type="file" id="upload-excel-input" accept=".xlsx, .xls" style="display: none;">
+            <label for="search-input" style="display: none;">Tìm kiếm học sinh</label>
+            <input type="text" id="search-input" placeholder="Tìm kiếm theo tên hoặc mã số học sinh">
+        </div>
+
+        <!-- Bảng danh sách học sinh -->
+        <table>
+            <thead>
+            <tr>
+                <th>Mã Học Sinh</th>
+                <th>Họ Tên</th>
+                <th>Giới Tính</th>
+                <th>Ngày Sinh</th>
+                <th>Phụ Huynh</th>
+                <th>Lớp</th>
+                <th>Năm Học</th>
+                <th>Chỉnh Sửa</th>
+                <th>Xóa</th>
+            </tr>
+            </thead>
+            <tbody id="student-list">
+            <!-- Dữ liệu học sinh sẽ được thêm vào đây -->
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Pop-up Xóa -->
+<div class="popup-overlay" id="popup-overlay">
+    <div class="popup">
+        <div class="popup-image"></div>
+        <p>Bạn có chắc chắn muốn xóa học sinh này?</p>
+        <button class="btn-confirm" id="confirm-delete">Xóa</button>
+        <button class="btn-cancel" id="cancel-delete">Hủy</button>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+<script src="ql_hs.js"></script>
+<script src="add_excel.js"></script>
+<script src="log_out.js"></script>
+</body>
+</html>

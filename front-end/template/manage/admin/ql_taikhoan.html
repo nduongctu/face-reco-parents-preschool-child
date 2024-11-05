@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tài Khoản</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../giaovien/giaovien.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Trang Chủ</a></li>
+        <li><a href="ql_giaovien.html"><i class="fas fa-chalkboard-teacher"></i>Giáo Viên</a></li>
+        <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
+        <li><a href="ql_lophoc.html"><i class="fas fa-book"></i>Lớp Học</a></li>
+        <li><a href="ql_taikhoan.html" class="active"><i class="fas fa-user-lock"></i>Tài Khoản</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <h1>Mật Khẩu</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User"/>
+            <span>Admin</span>
+            <a href="../../auth/login.html" class="logout-button" id="logout-button">Đăng xuất</a>
+        </div>
+    </header>
+
+    <!-- Dashboard Content -->
+    <div class="content">
+        <form id="change-password-form">
+            <div>
+                <label for="ten_tk">Tên Tài Khoản:</label>
+                <input type="text" id="ten_tk" name="ten_tk" readonly>
+            </div>
+            <div>
+                <label for="matkhau_moi">Mật Khẩu Mới:</label>
+                <input type="password" id="matkhau_moi" name="matkhau_moi" required>
+            </div>
+            <div>
+                <label for="nhaplai_matkhau_moi">Nhập Lại Mật Khẩu Mới:</label>
+                <input type="password" id="nhaplai_matkhau_moi" name="nhaplai_matkhau_moi" required>
+                <small id="password_error" style="color:red; display:none;">Mật khẩu không khớp!</small>
+            </div>
+            <div>
+                <button type="submit">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="ql_tk.js"></script>
+<script src="log_out.js"></script>
+</body>
+</html>

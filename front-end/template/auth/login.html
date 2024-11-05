@@ -1,23 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="../../styles.css">
+    <title>Trường Mầm Non Mặt Trời Nhỏ</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="../images/logo_mini.png" type="image/png">
 </head>
 <body>
     <div class="container">
-        <h2 id="formTitle">Login</h2>
-        <form id="authForm" data-endpoint="/token">
-            <input type="text" id="username" placeholder="Username" required>
-            <input type="password" id="password" placeholder="Password" required>
-            <button type="submit">Submit</button>
-        </form>
-        <div class="switch">
-            <a href="#" id="switchForm">Switch to Register</a>
+        <div class="login-box">
+            <!-- Đổi vị trí của khung welcome và khung login -->
+            <div class="welcome-section">
+                <img src="../images/logo_truong.jpg" alt="Logo Trường Mầm Non Mặt Trời Nhỏ" class="welcome-image">
+            </div>
+            <div class="login-form">
+                <h2>Đăng Nhập</h2>
+                <form id="login-form">
+                    <div class="input-group">
+                        <label for="username">Tên Đăng Nhập</label>
+                        <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
+                    </div>
+                    <div class="input-group">
+                        <label for="password">Mật Khẩu</label>
+                        <input type="password" id="password" placeholder="Nhập mật khẩu" required>
+                    </div>
+                    <button type="submit" class="sign-in-btn">ĐĂNG NHẬP</button>
+                </form>
+            </div>
         </div>
     </div>
-    <script src="../../script.js"></script>
+    <script src="scripts.js"></script>
 </body>
 </html>

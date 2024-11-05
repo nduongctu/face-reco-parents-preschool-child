@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh Sửa Học Sinh</title>
+    <link rel="stylesheet" href="edit_hs.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="img.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Tổng Quan</a></li>
+        <li><a href="phuhuynh.html"><i class="fas fa-user-graduate"></i>Phụ Huynh</a></li>
+        <li><a href="hocsinh.html" class="active"><i class="fas fa-book"></i>Học Sinh</a></li>
+        <li><a href="matkhau.html"><i class="fas fa-user-lock"></i>Mật Khẩu</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <h1>Thông Tin Học Sinh</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User" id="user-icon">
+            <span>Học Sinh</span>
+            <a href="../../auth/login.html" class="logout-button" id="logout-button">Đăng xuất</a>
+        </div>
+    </header>
+
+    <!-- Edit Form -->
+    <div class="content">
+        <div class="profile-picture-section">
+            <img src="../../images/user_icon.png" alt="Ảnh đại diện" id="profile-picture">
+
+            <!-- Form chọn ảnh -->
+            <form id="upload-profile-picture-form" enctype="multipart/form-data">
+                <fieldset>
+                    <button type="button" class="btn-change-picture" id="change-picture-button">Sửa ảnh đại diện
+                    </button>
+                    <input type="file" name="picture" accept="image/*" hidden id="file-input">
+                </fieldset>
+            </form>
+
+            <!-- Hướng dẫn -->
+            <div class="guidelines">
+                <div>Vui lòng chọn ảnh nhỏ hơn 5MB</div>
+                <div>Chọn hình ảnh phù hợp, không phản cảm</div>
+            </div>
+        </div>
+
+        <form id="edit-student-form">
+            <input type="hidden" id="student-id" name="id_hs"> <!-- ID học sinh ẩn -->
+
+            <div>
+                <label for="ten_hs">Họ Tên:</label>
+                <input type="text" id="ten_hs" name="ten_hs" required>
+            </div>
+            <div>
+                <label for="gioitinh_hs">Giới Tính:</label>
+                <select id="gioitinh_hs" name="gioitinh_hs" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div>
+                <label for="ngaysinh_hs">Ngày Sinh:</label>
+                <input type="date" id="ngaysinh_hs" name="ngaysinh_hs" required>
+            </div>
+            <div>
+                <label for="lop_hoc_ten">Lớp Học:</label>
+                <input id="lop_hoc_ten" name="lop_hoc_ten" type="text" readonly required>
+            </div>
+
+            <!-- Container to hold parent information -->
+            <div id="parent-container"></div>
+
+            <!-- Button to add parent -->
+            <button type="button" class="btn-add-parent" id="btn-add-parent">
+                <i class="fas fa-plus"></i> Thêm Phụ Huynh
+            </button>
+            <div>
+                <button type="submit">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="log_out.js"></script>
+<script src="hocsinh.js"></script>
+</body>
+</html>

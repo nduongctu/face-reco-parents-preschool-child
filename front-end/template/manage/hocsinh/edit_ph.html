@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chỉnh Sửa Phụ Huynh</title>
+    <link rel="stylesheet" href="edit_hs.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="img_ph.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo"/>
+    </div>
+    <ul>
+        <li><a href="tongquat.html"><i class="fas fa-th-large"></i>Tổng Quan</a></li>
+        <li><a href="phuhuynh.html" class="active"><i class="fas fa-user-graduate"></i>Phụ Huynh</a></li>
+        <li><a href="hocsinh.html"><i class="fas fa-book"></i>Học Sinh</a></li>
+        <li><a href="matkhau.html"><i class="fas fa-user-lock"></i>Mật Khẩu</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <a href="phuhuynh.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+
+        <h1>Thông Tin Phụ Huynh</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User"/>
+            <span>Phụ Huynh</span>
+        </div>
+    </header>
+
+    <!-- Edit Form -->
+    <div class="content">
+        <div class="profile-pictures-section">
+            <form id="upload-profile-pictures-form" enctype="multipart/form-data">
+                <button type="button" class="btn-upload-picture" id="upload-picture-button">Thêm ảnh đại diện</button>
+                <input type="file" name="pictures" accept="image/*" hidden id="file-input" multiple>
+            </form>
+            <div class="uploaded-pictures" id="uploaded-pictures">
+                <!-- Ảnh sẽ được thêm vào đây qua JavaScript -->
+            </div>
+        </div>
+
+        <div class="guidelines">
+            <div>Vui lòng chọn ảnh nhỏ hơn 5MB</div>
+            <div>Chọn hình ảnh phù hợp, rõ khuôn mặt</div>
+        </div>
+
+        <form id="edit-parent-form" enctype="multipart/form-data">
+            <input type="hidden" id="id_ph" name="id_ph">
+
+            <div>
+                <label for="ten_ph">Họ Tên:</label>
+                <input type="text" id="ten_ph" name="ten_ph" required>
+            </div>
+            <div>
+                <label for="gioitinh_ph">Giới Tính:</label>
+                <select id="gioitinh_ph" name="gioitinh_ph" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div>
+                <label for="ngaysinh_ph">Ngày Sinh:</label>
+                <input type="date" id="ngaysinh_ph" name="ngaysinh_ph" required>
+            </div>
+            <div>
+                <label for="sdt_ph">Số Điện Thoại:</label>
+                <input type="tel" id="sdt_ph" name="sdt_ph" required>
+            </div>
+            <div>
+                <label for="diachi_ph">Địa Chỉ:</label>
+                <input type="text" id="diachi_ph" name="diachi_ph" required>
+            </div>
+            <div>
+                <label for="quanhe">Quan Hệ:</label>
+                <select id="quanhe" name="quanhe" required>
+                    <option value="" disabled selected>Chọn một mối quan hệ</option>
+                    <option value="Cha">Cha</option>
+                    <option value="Mẹ">Mẹ</option>
+                    <option value="Người Giám Hộ">Người Giám Hộ</option>
+                </select>
+            </div>
+            <div>
+                <button type="submit">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="ph_edit.js"></script>
+</body>
+</html>
