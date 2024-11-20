@@ -130,8 +130,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             const payload = {
                 frame: {
                     frame: `data:image/jpeg;base64,${base64Image}`
-                },
-                id_hs_list: id_hs_list
+                }, id_hs_list: id_hs_list
             };
 
             // Gửi dữ liệu đến API
@@ -147,11 +146,42 @@ document.addEventListener('DOMContentLoaded', async function () {
         detectFace(); // Bắt đầu phát hiện khuôn mặt
     });
 
+// Hàm hiển thị popup
+    function showPopup(message) {
+        return new Promise((resolve, reject) => {
+            const popup = document.getElementById('popup');
+            const popupMessage = document.getElementById('popupMessage');
+
+            // Cập nhật thông báo trong popup
+            popupMessage.textContent = message;
+
+            // Hiển thị popup
+            popup.style.display = "block";
+
+            // Gắn sự kiện cho nút đóng popup
+            const closePopupBtn = document.getElementById('closePopupBtn');
+            closePopupBtn.addEventListener("click", function () {
+                popup.style.display = "none";  // Ẩn popup khi bấm "Đóng"
+                resolve();  // Đảm bảo Promise được giải quyết khi người dùng bấm "Đóng"
+            });
+        });
+    }
+
+
+// Hàm ẩn popup
+    function hidePopup() {
+        const popup = document.getElementById('popup');
+        popup.style.display = "none";  // Ẩn popup
+    }
+
+// Gắn sự kiện vào nút đóng popup
+    const closePopupBtn = document.getElementById('closePopupBtn');
+    closePopupBtn.addEventListener("click", hidePopup);  // Khi người dùng bấm "Đóng", popup sẽ ẩn đi
 
 // Hàm gửi dữ liệu đến API
     async function sendFrameToApi(payload) {
-        const euclidThreshold = matchSlider.value; // Lấy giá trị từ matchSlider
-        const apiUrl = `http://localhost:8000/admin/recognize?euclid_threshold=${euclidThreshold}`; // Thêm tham số vào URL
+        const euclidThreshold = matchSlider.value;  // Lấy giá trị từ matchSlider
+        const apiUrl = `http://localhost:8000/admin/recognize?euclid_threshold=${euclidThreshold}`;  // Thêm tham số vào URL
 
         try {
             const response = await fetch(apiUrl, {
@@ -166,35 +196,33 @@ document.addEventListener('DOMContentLoaded', async function () {
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(result.message); // Thông báo thành công
-                    const ngay = today.toLocaleDateString('vi-VN', options).split('/').reverse().join('-');
-
-                    // Tải lại danh sách học sinh đã đến lớp
-                    const students = await fetchStudentsByDate(id_lh, ngay);
-                    updateRecognitionResults(students); // Cập nhật lại danh sách học sinh có mặt
-
+                    // Hiển thị thông báo và đợi người dùng bấm "Đóng"
+                    await showPopup(result.message); // Sử dụng thông báo từ API
                 } else {
-                    alert("Nhận dạng thất bại! Không có phụ huynh nào được tìm thấy.");
+                    // Hiển thị thông báo thất bại và đợi người dùng bấm "Đóng"
+                    await showPopup("Nhận dạng thất bại! Không có phụ huynh nào được tìm thấy.");
                 }
             } else {
                 const errorResponse = await response.json();
                 if (errorResponse.detail) {
-                    alert(errorResponse.detail);
+                    // Hiển thị thông báo lỗi từ API và đợi người dùng bấm "Đóng"
+                    await showPopup(errorResponse.detail);
                 } else {
-                    alert("Có lỗi xảy ra khi gửi dữ liệu đến API.");
+                    // Hiển thị thông báo lỗi khác và đợi người dùng bấm "Đóng"
+                    await showPopup("Có lỗi xảy ra khi gửi dữ liệu đến API.");
                 }
             }
         } catch (error) {
             console.error("Lỗi:", error);
-            alert("Lỗi hệ thống, vui lòng thử lại sau.");
+            // Hiển thị thông báo lỗi hệ thống và đợi người dùng bấm "Đóng"
+            await showPopup("Lỗi hệ thống, vui lòng thử lại sau.");
         }
     }
 
     async function fetchUserRole(token) {
         try {
             const response = await fetch('http://localhost:8000/auth/admin/me', {
-                method: 'GET',
-                headers: {
+                method: 'GET', headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
@@ -219,8 +247,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     async function fetchTeacherData(apiUrl) {
         try {
             const response = await fetch(apiUrl, {
-                method: 'GET',
-                headers: {
+                method: 'GET', headers: {
                     'Authorization': `Bearer ${token}` // Thêm token vào header
                 }
             });
@@ -283,20 +310,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
             // Tạo payload
             const payload = {
-                id_hs: idHs,
-                id_lh: idLh,
-                ngay: ngay,
-                gio_vao: gioVao
+                id_hs: idHs, id_lh: idLh, ngay: ngay, gio_vao: gioVao
             };
 
             // Gửi dữ liệu về server
             try {
                 const response = await fetch('http://localhost:8000/admin/create', {
-                    method: 'POST',
-                    headers: {
+                    method: 'POST', headers: {
                         'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload) // Chuyển đổi payload thành chuỗi JSON
+                    }, body: JSON.stringify(payload) // Chuyển đổi payload thành chuỗi JSON
                 });
 
                 // Kiểm tra phản hồi từ server
@@ -320,7 +342,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         return studentRow;
     }
-
 
     async function fetchStudentsByDate(id_lh, date) {
         const apiUrl = `http://localhost:8000/admin/diem-danh?id_lh=${id_lh}&ngay=${date}`;
