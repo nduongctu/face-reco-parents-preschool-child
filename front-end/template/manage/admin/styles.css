@@ -1,0 +1,279 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f7fc;
+    display: flex;
+    overflow-x: hidden; /* Ngăn chặn cuộn ngang khi sidebar mở */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px; /* Chiều rộng sidebar trên màn hình lớn */
+    height: 100vh;
+    background-color: #f8f9fa;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    left: 0; /* Vị trí cố định cho desktop */
+}
+
+.sidebar .logo {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #b5b2b2;
+}
+
+.sidebar .logo img {
+    width: 120px;
+    height: auto;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+ul li {
+    margin: 25px 0;
+}
+
+ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    padding: 12px 18px;
+    border-radius: 10px;
+    transition: background-color 0.3s ease;
+}
+
+ul li a:hover, ul li a.active {
+    background-color: #d1e7ff;
+    color: #007bff;
+}
+
+ul li a i {
+    margin-right: 15px;
+    font-size: 22px;
+}
+
+/* Main Content */
+.main-content {
+    margin-left: 250px; /* Dịch nội dung chính sang phải để tránh sidebar trên màn hình lớn */
+    flex-grow: 1;
+    background-color: #fff;
+    padding: 30px;
+    min-height: 100vh;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #b5b2b2;
+    position: relative; /* Để vị trí tuyệt đối của nút hamburger hoạt động */
+}
+
+header h1 {
+    font-size: 24px; /* Kích thước tiêu đề nhỏ hơn */
+    color: #333;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.user-info img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 15px;
+}
+
+.user-info span {
+    font-weight: bold;
+    color: #333;
+    font-size: 18px;
+}
+
+/* Content */
+.content {
+    margin-top: 30px;
+    background-color: #f4f7fc;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Định kiểu cho phần điều khiển tiêu đề (nút thêm và ô tìm kiếm) */
+.header-controls {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px; /* Thay đổi khoảng cách nếu cần */
+}
+
+/* Các nút thêm học sinh */
+.btn-add, .btn-add-excel {
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #28a745;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 5px; /* Khoảng cách giữa các nút */
+}
+
+.btn-add:hover, .btn-add-excel:hover {
+    background-color: #218838; /* Màu nền khi hover */
+}
+
+/* Ô tìm kiếm */
+#search-input {
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    width: 400px; /* Đặt chiều rộng cố định cho ô tìm kiếm */
+    margin-left: 10px; /* Thêm khoảng cách bên trái ô tìm kiếm */
+}
+
+/* Bảng danh sách học sinh */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f4f4f4;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+/* CSS cho nút chỉnh sửa */
+.btn-edit {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-edit:hover {
+    background-color: #0056b3; /* Màu xanh dương đậm khi hover */
+}
+
+/* CSS cho nút xóa */
+.btn-delete {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #dc3545; /* Màu đỏ cho nút xóa */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.btn-delete:hover {
+    background-color: #c82333; /* Màu đỏ đậm khi hover */
+}
+
+/* CSS cho bảng pop-up */
+.popup-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.popup {
+    background: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    width: 335px;
+    text-align: center;
+    position: relative; /* Để định vị hình ảnh ở giữa */
+}
+
+.popup .popup-image {
+    width: 70px; /* Điều chỉnh kích thước hình ảnh nếu cần */
+    height: 70px;
+    background: url('../../images/x_icon.png') no-repeat center center; /* Đặt hình ảnh dấu X */
+    background-size: contain; /* Đảm bảo hình ảnh hiển thị đúng */
+    margin: 0 auto 20px; /* Căn giữa hình ảnh và tạo khoảng cách phía dưới */
+}
+
+.popup button {
+    margin-top: 15px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+}
+
+.popup .btn-confirm {
+    background-color: #dc3545; /* Màu đỏ cho nút xác nhận */
+    color: #fff;
+}
+
+.popup .btn-cancel {
+    background-color: #6c757d; /* Màu xám cho nút hủy */
+    color: #fff;
+}
+
+/* Logout button */
+.logout-button {
+    background-color: #f44336; /* Màu đỏ */
+    color: white; /* Màu chữ trắng */
+    padding: 10px 15px; /* Khoảng cách */
+    text-decoration: none; /* Bỏ gạch chân */
+    border-radius: 5px; /* Bo tròn góc */
+    margin-left: 20px; /* Khoảng cách với tên người dùng */
+}
+
+.logout-button:hover {
+    background-color: #d32f2f; /* Màu đỏ đậm khi hover */
+}

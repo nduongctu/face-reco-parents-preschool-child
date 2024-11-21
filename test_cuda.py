@@ -1,4 +1,8 @@
-import torch
+import tensorflow as tf
 
-print(torch.cuda.is_available())
-print(torch.cuda.get_device_name(0))
+print("TensorFlow version:", tf.__version__)
+
+if tf.config.list_physical_devices('GPU'):
+    print("GPUs detected:", tf.config.list_physical_devices('GPU'))
+else:
+    print("No GPUs detected")

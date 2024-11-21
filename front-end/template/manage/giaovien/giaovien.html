@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giáo Viên</title>
+    <link rel="stylesheet" href="giaovien.css">
+    <link rel="stylesheet" href="giaovien_img.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="icon" href="../../images/logo_mini.png" type="image/png">
+</head>
+<body>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="logo">
+        <img src="../../images/logo_mini.png" alt="Logo">
+    </div>
+    <ul>
+        <li><a href="giaovien.html" class="active"><i class="fas fa-user"></i>Tài Khoản</a></li>
+        <li><a href="ql_hocsinh.html"><i class="fas fa-user-graduate"></i>Học Sinh</a></li>
+        <li><a href="nhandang.html"><i class="fas fa-book"></i>Nhận Dạng</a></li>
+        <li><a href="taikhoan.html"><i class="fas fa-user-lock"></i>Mật Khẩu</a></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <header>
+        <h1>Tổng Quan</h1>
+        <div class="user-info">
+            <img src="../../images/user_icon.png" alt="User" id="user-icon">
+            <span>Giáo Viên</span>
+            <a href="../../auth/login.html" class="logout-button" id="logout-button">Đăng xuất</a>
+        </div>
+    </header>
+
+    <div class="content">
+        <div class="profile-picture-section">
+            <img src="../../images/user_icon.png" alt="Ảnh đại diện" id="profile-picture">
+
+            <!-- Form chọn ảnh -->
+            <form id="upload-profile-picture-form" enctype="multipart/form-data">
+                <fieldset>
+                    <button type="button" class="btn-change-picture" id="change-picture-button">Sửa ảnh đại diện
+                    </button>
+                    <input type="file" name="picture" accept="image/*" hidden id="file-input">
+                </fieldset>
+            </form>
+
+            <!-- Hướng dẫn -->
+            <div class="guidelines">
+                <div>Vui lòng chọn ảnh nhỏ hơn 5MB</div>
+                <div>Chọn hình ảnh phù hợp, không phản cảm</div>
+            </div>
+        </div>
+
+        <!-- Form thông tin giáo viên -->
+        <form id="edit-teacher-form">
+            <div>
+                <label for="ma_gv">Mã Giáo Viên:</label>
+                <input type="text" id="ma_gv" name="ma_gv" required readonly>
+            </div>
+            <div>
+                <label for="ten_gv">Họ Tên:</label>
+                <input type="text" id="ten_gv" name="ten_gv" required>
+            </div>
+            <div>
+                <label for="gioitinh_gv">Giới Tính:</label>
+                <select id="gioitinh_gv" name="gioitinh_gv" required>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                </select>
+            </div>
+            <div>
+                <label for="ngaysinh_gv">Ngày Sinh:</label>
+                <input type="date" id="ngaysinh_gv" name="ngaysinh_gv" required>
+            </div>
+            <div>
+                <label for="diachi_gv">Địa Chỉ:</label>
+                <input type="text" id="diachi_gv" name="diachi_gv" required>
+            </div>
+            <div>
+                <label for="sdt_gv">Số Điện Thoại:</label>
+                <input type="text" id="sdt_gv" name="sdt_gv" required pattern="\d{10}"
+                       title="Số điện thoại phải đúng 10 chữ số.">
+                <small id="sdt_error" style="color:red; display:none;">Số điện thoại phải đúng 10 chữ số.</small>
+            </div>
+            <div>
+                <label for="email_gv">Email:</label>
+                <input type="email" id="email_gv" name="email_gv" required>
+            </div>
+            <div>
+                <label for="quyen">Quyền:</label>
+                <select id="quyen" name="quyen" required disabled>
+                    <option value="1">Giáo Viên</option>
+                    <option value="0">Quản Lý</option>
+                </select>
+            </div>
+            <div>
+                <label for="lop_hoc">Lớp Học:</label>
+                <select id="lop_hoc" name="lop_hoc" required disabled>
+                </select>
+            </div>
+            <div>
+                <button type="submit">Lưu Thay Đổi</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="giaovien.js"></script>
+<script src="log_out.js"></script>
+</body>
+</html>

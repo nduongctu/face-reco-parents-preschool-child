@@ -1,0 +1,45 @@
+/* Profile Picture Section */
+.profile-picture-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px; /* Khoảng cách dưới */
+    border: 1px solid #bdc3c7; /* Viền xung quanh */
+    padding: 15px; /* Padding cho phần hình ảnh */
+    border-radius: 8px; /* Bo góc cho phần viền */
+    background-color: #f9f9f9; /* Nền sáng cho phần hình ảnh */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Đổ bóng nhẹ cho phần hình ảnh */
+}
+
+.profile-picture-section img {
+    width: 100px; /* Kích thước hình ảnh đại diện */
+    height: 100px; /* Kích thước hình ảnh đại diện */
+    border-radius: 50%; /* Bo tròn hình ảnh */
+    margin-right: 20px; /* Khoảng cách bên phải hình ảnh */
+    border: 2px solid #3498db; /* Đường viền màu xanh */
+}
+
+.profile-picture-section form {
+    display: flex; /* Đặt các phần tử trong form theo hàng */
+    flex-direction: column; /* Đặt các phần tử theo cột */
+}
+
+.profile-picture-section button {
+    background-color: #3498db; /* Nền nút màu xanh */
+    color: white; /* Chữ màu trắng */
+    border: none; /* Không viền */
+    padding: 10px 15px; /* Padding cho nút */
+    border-radius: 5px; /* Bo góc cho nút */
+    cursor: pointer; /* Con trỏ chuột khi di chuột qua nút */
+    transition: background 0.3s; /* Hiệu ứng chuyển màu nền khi hover */
+}
+
+.profile-picture-section button:hover {
+    background-color: #2980b9; /* Nền nút khi hover */
+}
+
+/* Guidelines for uploading images */
+.guidelines {
+    margin-top: 10px; /* Khoảng cách trên của phần hướng dẫn */
+    color: #7f8c8d; /* Màu chữ hướng dẫn */
+    font-size: 12px; /* Kích thước chữ nhỏ hơn */
+}
