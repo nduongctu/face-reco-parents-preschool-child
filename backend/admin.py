@@ -371,6 +371,7 @@ def get_all_parent_images(id_ph: int, db: Session = Depends(get_db)):
                 vector_data = []
 
             response_image = {
+                "id_image": image.id_image,
                 "id_ph": image.id_ph,
                 "image_path": image.image_path,
                 "vector": vector_data
@@ -388,7 +389,7 @@ def get_all_parent_images(id_ph: int, db: Session = Depends(get_db)):
 async def remove_parent_image(id_image: int, db: Session = Depends(get_db)):
     try:
         result = await crud.remove_parent_image(db, id_image)
-        return {"detail": "Ảnh đã được xóa thành công"}
+        return result
     except HTTPException as e:
         raise e
     except Exception as e:

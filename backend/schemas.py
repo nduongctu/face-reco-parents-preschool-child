@@ -108,6 +108,7 @@ class FrameData(BaseModel):
 
 
 class PhuHuynhImageResponse(BaseModel):
+    id_image: int
     id_ph: int
     image_path: str
     vector: List[float] = None
