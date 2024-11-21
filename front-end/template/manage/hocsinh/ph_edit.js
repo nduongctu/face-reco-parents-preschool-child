@@ -241,7 +241,6 @@ function displayUploadedPictures(images) {
             if (!confirmDelete) return;
 
             try {
-                // Sửa lại URL đúng: sử dụng id_image và id_ph từ dữ liệu ảnh
                 const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${image.id_image}/`, {
                     method: "DELETE",
                     headers: {
