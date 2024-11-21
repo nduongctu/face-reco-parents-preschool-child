@@ -222,7 +222,7 @@ function displayUploadedPictures(images) {
     images.forEach(image => {
         const imgWrapper = document.createElement("div");
         imgWrapper.classList.add("image-wrapper");
-        imgWrapper.id = `image-${image.id_ph}`;
+        imgWrapper.id = `image-${image.id_image}`;  // Dùng id_image cho đúng
 
         const imgElement = document.createElement("img");
         imgElement.src = image.image_path;
@@ -241,10 +241,15 @@ function displayUploadedPictures(images) {
             if (!confirmDelete) return;
 
             try {
-                const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${image.id_ph}/`, {
+                // Sửa lại URL đúng: sử dụng id_image và id_ph từ dữ liệu ảnh
+                const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${image.id_image}/`, {
                     method: "DELETE",
+                    headers: {
+                        "Authorization": `Bearer ${localStorage.getItem('access_token')}`
+                    }
                 });
 
+                // Kiểm tra xem response có thành công không
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("Lỗi khi xóa ảnh:", errorData.detail);
@@ -253,7 +258,9 @@ function displayUploadedPictures(images) {
                 }
 
                 alert("Ảnh đã được xóa thành công");
-                document.getElementById(`image-${image.id_ph}`).remove();
+
+                // Xóa ảnh khỏi DOM sau khi xóa thành công từ backend
+                document.getElementById(`image-${image.id_image}`).remove();  // Sử dụng id_image để xóa đúng
             } catch (error) {
                 console.error("Lỗi hệ thống khi xóa ảnh:", error);
                 alert("Đã xảy ra lỗi hệ thống khi xóa ảnh.");

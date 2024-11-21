@@ -1006,12 +1006,15 @@ async def remove_parent_image(db: Session, id_image: int):
     image_record = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_image == id_image).first()
 
     if not image_record:
-        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh")
+        raise HTTPException(status_code=404, detail="Không tìm thấy ảnh trong cơ sở dữ liệu")
+
+    if not os.path.exists(image_record.image_path):
+        raise HTTPException(status_code=404, detail="Tệp ảnh không tồn tại trên hệ thống")
 
     try:
         os.remove(image_record.image_path)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Không thể xóa file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Không thể xóa tệp ảnh: {str(e)}")
 
     db.delete(image_record)
 
