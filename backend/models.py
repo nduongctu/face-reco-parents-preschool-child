@@ -118,7 +118,7 @@ class PhuHuynh_Images(Base):
     id_image = Column(Integer, primary_key=True, index=True)
     id_ph = Column(Integer, ForeignKey('PhuHuynh.id_ph'))
     image_path = Column(String(255), nullable=False)
-    vector = Column(Text, nullable=True)  # Thêm cột lưu trữ vector embeddings dưới dạng JSON
+    vector = Column(Text, nullable=True)
 
     # Quan hệ với bảng PhuHuynh
     phu_huynh = relationship("PhuHuynh", back_populates="images")
