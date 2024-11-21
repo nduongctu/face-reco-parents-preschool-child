@@ -176,3 +176,55 @@ header h1 {
     width: 50px; /* Điều chỉnh chiều rộng cột Xác Nhận */
     text-align: center; /* Căn giữa nội dung trong cột */
 }
+
+/* Popup */
+.popup {
+    display: none; /* Popup được ẩn đi mặc định */
+    position: fixed; /* Để popup nằm ở vị trí cố định trên màn hình */
+    top: 50%; /* Đặt popup ở giữa chiều dọc */
+    left: 50%; /* Đặt popup ở giữa chiều ngang */
+    transform: translate(-50%, -50%); /* Dịch chuyển popup về chính giữa */
+    background-color: rgba(0, 0, 0, 0.8); /* Nền bán trong suốt với màu đen */
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 9999; /* Đảm bảo popup không bị che khuất bởi các phần tử khác */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); /* Thêm hiệu ứng bóng đổ để popup nổi bật hơn */
+}
+
+/* Nội dung của popup */
+.popup-content {
+    background-color: #444; /* Màu nền tối cho phần nội dung */
+    padding: 20px;
+    border-radius: 10px;
+    position: relative; /* Để nút đóng nằm ở góc */
+    font-family: Arial, sans-serif;
+    text-align: center; /* Căn giữa nội dung của popup */
+}
+
+/* Text trong popup */
+.popup-message {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px; /* Khoảng cách giữa thông báo và nút đóng */
+}
+
+/* Nút đóng */
+.close-popup-btn {
+    background-color: #f44336; /* Màu đỏ cho nút đóng */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease; /* Thêm hiệu ứng chuyển màu khi hover */
+}
+
+.close-popup-btn:hover {
+    background-color: #d32f2f; /* Màu đỏ đậm khi hover */
+}
+
+.close-popup-btn:focus {
+    outline: none; /* Bỏ viền khi nút được chọn */
+}
