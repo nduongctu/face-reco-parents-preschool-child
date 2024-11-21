@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="img_ph.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.css">
     <link rel="icon" href="../../images/logo_mini.png" type="image/png">
 </head>
 <body>
@@ -43,7 +44,7 @@
         <div class="profile-pictures-section">
             <form id="upload-profile-pictures-form" enctype="multipart/form-data">
                 <button type="button" class="btn-upload-picture" id="upload-picture-button">Thêm ảnh đại diện</button>
-                <input type="file" name="pictures" accept="image/*" hidden id="file-input" multiple>
+                <input type="file" name="pictures" accept="image/*" hidden id="file-input">
             </form>
             <div class="uploaded-pictures" id="uploaded-pictures">
                 <!-- Ảnh sẽ được thêm vào đây qua JavaScript -->
@@ -97,6 +98,19 @@
     </div>
 </div>
 
+<!-- Modal for cropping image -->
+<div id="crop-modal" style="display: none;">
+    <div class="modal-content">
+        <span id="close-crop-modal" style="cursor: pointer;">&times;</span>
+        <h3>Chọn Vùng Khuôn Mặt</h3>
+        <div>
+            <img id="image-to-crop" style="max-width: 100%; height: auto;"/>
+        </div>
+        <button id="crop-button">Xác Nhận</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>
 <script src="ph_edit.js"></script>
 </body>
 </html>

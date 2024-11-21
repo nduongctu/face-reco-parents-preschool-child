@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         await updateParentInfo(parentId, token);
     });
 
-    await fetchAndDisplayAllImages(parentId); // Gọi hàm để lấy tất cả ảnh của phụ huynh khi trang được tải
+    await fetchAndDisplayAllImages(parentId);
 });
 
 function getParentIdFromURL() {
@@ -116,12 +116,11 @@ async function fetchAndDisplayAllImages(parentId) {
         const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${parentId}/`);
         if (response.ok) {
             const images = await response.json();
-            console.log("Dữ liệu trả về từ API:", images);  // In ra dữ liệu để kiểm tra
             displayUploadedPictures(images);
         } else if (response.status === 404) {
             console.log("Không có ảnh nào cho phụ huynh này.");
             alert("Không có ảnh nào cho phụ huynh này.");
-            displayUploadedPictures([]); // Xóa ảnh cũ
+            displayUploadedPictures([]);
         } else {
             console.error("Lấy ảnh không thành công");
             alert("Lỗi: Không thể lấy ảnh.");
@@ -136,39 +135,80 @@ document.getElementById("upload-picture-button").addEventListener("click", () =>
     document.getElementById("file-input").click();
 });
 
-document.getElementById("file-input").addEventListener("change", async function () {
-    const parentId = getParentIdFromURL();
-    const files = this.files;
-    const formData = new FormData();
+let cropper;
 
-    for (let file of files) {
-        formData.append("file", file);
-    }
+function openCropModal(imageSrc) {
+    const cropModal = document.getElementById("crop-modal");
+    const imageElement = document.getElementById("image-to-crop");
 
-    const token = localStorage.getItem('access_token');
+    imageElement.src = imageSrc;  // Cập nhật nguồn ảnh
+    cropModal.style.display = "block";  // Hiển thị modal
 
-    try {
-        const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${parentId}/`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}` // Thêm token vào headers
-            },
-            body: formData
-        });
+    // Tạo cropper cho ảnh
+    cropper = new Cropper(imageElement, {
+        aspectRatio: 1,  // Tỷ lệ cắt vuông
+        viewMode: 1,     // Chế độ xem ảnh
+    });
+}
 
-        if (response.ok) {
-            // Gọi lại hàm để lấy tất cả ảnh
-            await fetchAndDisplayAllImages(parentId);
-        } else {
-            console.error("Tải ảnh lên thất bại");
-            const errorData = await response.json();
-            alert("Lỗi: " + errorData.detail);
-        }
-    } catch (error) {
-        console.error("Lỗi:", error);
-        alert("Đã xảy ra lỗi khi tải ảnh lên.");
+document.getElementById("file-input").addEventListener("change", function () {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            openCropModal(event.target.result);  // Mở modal với ảnh đã chọn
+        };
+        reader.readAsDataURL(file);
     }
 });
+
+document.getElementById("crop-button").addEventListener("click", async function () {
+    const parentId = getParentIdFromURL();
+    const croppedCanvas = cropper.getCroppedCanvas({
+        width: 256,
+        height: 256,
+    });
+
+    croppedCanvas.toBlob(async (blob) => {
+        const formData = new FormData();
+        formData.append("file", blob, "cropped_image.jpg");
+
+        const token = localStorage.getItem('access_token');
+
+        try {
+            const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${parentId}/`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                },
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Ảnh đã được tải lên thành công.");
+                closeCropModal();
+                await fetchAndDisplayAllImages(parentId);
+            } else {
+                const errorData = await response.json();
+                alert("Lỗi khi tải ảnh lên: " + errorData.detail);
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+            alert("Đã xảy ra lỗi khi tải ảnh lên.");
+        }
+    });
+});
+
+function closeCropModal() {
+    const cropModal = document.getElementById("crop-modal");
+    cropModal.style.display = "none";  // Ẩn modal khi đóng
+    if (cropper) {
+        cropper.destroy();  // Hủy cropper khi đóng modal
+        cropper = null;
+    }
+}
+
+document.getElementById("close-crop-modal").addEventListener("click", closeCropModal);
 
 function displayUploadedPictures(images) {
     const uploadedPicturesContainer = document.getElementById("uploaded-pictures");
@@ -191,12 +231,11 @@ function displayUploadedPictures(images) {
         const deleteButton = document.createElement("button");
         deleteButton.classList.add("delete-button");
 
-        // Thêm hình ảnh icon xóa vào nút
         const iconElement = document.createElement("img");
-        iconElement.src = "../../images/x_icon.png"; // Đường dẫn đến icon xóa
-        iconElement.alt = "Xóa ảnh"; // Thêm thuộc tính alt cho hình ảnh
+        iconElement.src = "../../images/x_icon.png";
+        iconElement.alt = "Xóa ảnh";
 
-        deleteButton.appendChild(iconElement); // Thêm icon vào nút xóa
+        deleteButton.appendChild(iconElement);
         deleteButton.addEventListener("click", async () => {
             const confirmDelete = confirm("Bạn có chắc chắn muốn xóa ảnh này?");
             if (!confirmDelete) return;
