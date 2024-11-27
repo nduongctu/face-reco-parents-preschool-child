@@ -297,7 +297,7 @@ def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResp
         joinedload(models.HocSinh.lop_hoc).joinedload(models.LopHoc.nam_hoc),  # Tải thêm thông tin NamHoc
         joinedload(models.HocSinh.phu_huynhs)
     ).filter(
-        models.GiaoVien.id_gv == id_gv  # Lọc theo id giáo viên
+        models.GiaoVien.id_gv == id_gv
     ).all()
 
     result = []
@@ -325,7 +325,7 @@ def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResp
             gioitinh_hs=student.gioitinh_hs,
             ngaysinh_hs=student.ngaysinh_hs,
             lop_hoc_ten=lop_hoc_ten,
-            nam_hoc=nam_hoc,  # Thêm thông tin năm học
+            nam_hoc=nam_hoc,
             phu_huynh=phu_huynh_info,
             id_taikhoan=id_taikhoan
         )
@@ -336,6 +336,7 @@ def get_students_by_teacher(db: Session, id_gv: int) -> List[schemas.HocSinhResp
 
 
 def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
+    # Truy vấn học sinh
     student = db.query(models.HocSinh).options(
         joinedload(models.HocSinh.tai_khoan),
         joinedload(models.HocSinh.lop_hoc),
@@ -352,19 +353,23 @@ def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
     # Lấy thông tin năm học
     nam_hoc = student.lop_hoc.nam_hoc.namhoc if student.lop_hoc and student.lop_hoc.nam_hoc else 'Chưa có năm học'
 
-    # Lấy thông tin phụ huynh, bao gồm cả giới tính
+    # Lấy thông tin phụ huynh
     phu_huynh_info = [
         {
-            "id_ph": phu_huynh.phu_huynh.id_ph,  # ID phụ huynh
+            "id_ph": phu_huynh.phu_huynh.id_ph,
             "ten_ph": phu_huynh.phu_huynh.ten_ph,
             "quanhe": phu_huynh.quanhe,
-            "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph  # Thêm giới tính phụ huynh ở đây
+            "gioitinh_ph": phu_huynh.phu_huynh.gioitinh_ph
         }
         for phu_huynh in student.phu_huynhs
     ]
 
-    id_taikhoan = student.tai_khoan.id_taikhoan if student.tai_khoan else None
+    # Truy vấn tài khoản từ id_taikhoan
+    taikhoan = None
+    if student.tai_khoan:
+        taikhoan = student.tai_khoan.taikhoan
 
+    # Tạo schema trả về
     student_data = schemas.HocSinhResponse(
         id_hs=student.id_hs,
         ten_hs=student.ten_hs,
@@ -373,7 +378,7 @@ def get_student_by_id(db: Session, student_id: int) -> schemas.HocSinhResponse:
         lop_hoc_ten=lop_hoc_ten,
         nam_hoc=nam_hoc,
         phu_huynh=phu_huynh_info,
-        id_taikhoan=id_taikhoan
+        taikhoan=taikhoan  # Thay vì id_taikhoan, trả về taikhoan
     )
 
     return student_data

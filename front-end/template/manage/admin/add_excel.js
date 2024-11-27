@@ -94,16 +94,17 @@ document.getElementById('upload-excel-input').addEventListener('change', functio
 });
 
 // Hàm tạo tên đăng nhập từ tên học sinh
-function createUsername(name, count) {
+function createUsername(name) {
     if (!name || typeof name !== 'string' || name.trim() === '') {
         console.warn(`Tên không hợp lệ: ${name}`);
-        return `user${count.toString().padStart(3, '0')}`;
+        const randomNumber = Math.floor(1000 + Math.random() * 9000); // Tạo số ngẫu nhiên 4 chữ số
+        return `user${randomNumber}`;
     }
 
     const sanitized = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const username = sanitized.toLowerCase().replace(/\s+/g, '');
-    const suffix = String(count).padStart(3, '0');
-    return `${username}${suffix}`;
+    const randomNumber = Math.floor(1000 + Math.random() * 9000);
+    return `${username}${randomNumber}`;
 }
 
 // Hàm gửi dữ liệu học sinh lên server

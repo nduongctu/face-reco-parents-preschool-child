@@ -106,6 +106,14 @@ function populateStudentForm(student) {
     document.getElementById('ten_hs').value = student.ten_hs;
     document.getElementById('gioitinh_hs').value = student.gioitinh_hs;
     document.getElementById('ngaysinh_hs').value = student.ngaysinh_hs;
+    // Hiển thị thông tin tài khoản
+    const accountInput = document.getElementById('taikhoan');
+    if (student.taikhoan) {
+        accountInput.value = student.taikhoan; // Gán giá trị tài khoản từ API
+    } else {
+        accountInput.value = 'Chưa có tài khoản'; // Hiển thị nếu không có tài khoản
+    }
+
 
     const classSelect = document.getElementById('lop_hoc_ten');
     classSelect.innerHTML = ''; // Xóa tất cả các tùy chọn hiện có

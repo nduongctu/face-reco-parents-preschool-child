@@ -216,7 +216,7 @@ class HocSinhBase(BaseModel):
     lop_hoc_ten: Optional[str] = None
     nam_hoc: Optional[str] = None
     phu_huynh: Optional[List[PhuHuynhInfo]] = None
-    id_taikhoan: Optional[int] = None
+    taikhoan: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
