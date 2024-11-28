@@ -349,7 +349,20 @@ def get_student_image(id_hs: int, db: Session = Depends(get_db)):
 
 @router.post("/images/phu-huynh/{id_ph}/")
 async def upload_parent_image(id_ph: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    return await crud.upload_parent_image(db, id_ph, file)
+    new_image, new_flipped_image = await crud.upload_parent_image(db, id_ph, file)
+
+    return {
+        "image": {
+            "id_ph": new_image.id_ph,
+            "image_path": new_image.image_path,
+            "vector": new_image.vector
+        },
+        "flipped_image": {
+            "id_ph": new_flipped_image.id_ph,
+            "image_path": new_flipped_image.image_path,
+            "vector": new_flipped_image.vector
+        }
+    }
 
 
 @router.get("/images/phu-huynh/{id_ph}/", response_model=List[schemas.PhuHuynhImageResponse])

@@ -40,13 +40,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 switch (role) {
                     case 0:
-                        window.location.href = '../manage/admin/tongquat.html';
+                        window.location.href = '../manage/admin/ql_giaovien.html';
                         break;
                     case 1:
                         window.location.href = '../manage/giaovien/giaovien.html';
                         break;
                     case 2:
-                        window.location.href = '../manage/hocsinh/tongquat.html';
+                        window.location.href = '../manage/hocsinh/hocsinh.html';
                         break;
                     default:
                         alert('Vai trò không xác định! Vui lòng liên hệ với quản trị viên.');

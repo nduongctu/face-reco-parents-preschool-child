@@ -9,6 +9,7 @@ import os
 from datetime import datetime, date, time
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
+from PIL import Image
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -512,6 +513,9 @@ def delete_student(db: Session, student_id: int):
     if db_student is None:
         raise HTTPException(status_code=404, detail="Học sinh không tồn tại!")
 
+    # Xóa các bản ghi trong bảng DiemDanh liên quan đến học sinh
+    db.query(models.DiemDanh).filter(models.DiemDanh.id_hs == student_id).delete(synchronize_session=False)
+
     # Lấy danh sách phụ huynh liên kết với học sinh này
     parent_relations = db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_hs == student_id).all()
     parent_ids = [relation.id_ph for relation in parent_relations]
@@ -986,55 +990,113 @@ async def upload_parent_image(db: Session, id_ph: int, file: UploadFile):
     except Exception as e:
         raise Exception(f"Không thể lưu hình ảnh: {str(e)}")
 
-    # Tính toán vector từ ảnh bằng đường dẫn đến tệp hình ảnh
+    # Tính toán vector từ ảnh gốc
     vector = await calculate_vector(file_location)
 
-    # **Chuyển vector từ ndarray thành JSON string**
-    vector_json = json.dumps(vector.tolist())  # Dòng này là thay đổi quan trọng
+    # Chuyển vector từ ndarray thành JSON string
+    vector_json = json.dumps(vector.tolist())
 
-    # Tạo mới bản ghi ảnh phụ huynh với vector đã được chuyển thành JSON
+    # Lưu ảnh gốc và vector vào cơ sở dữ liệu
     new_image = models.PhuHuynh_Images(id_ph=id_ph, image_path=file_location, vector=vector_json)
     db.add(new_image)
 
-    # Thực hiện commit để lưu vào cơ sở dữ liệu
+    # Tạo ảnh lật
+    try:
+        # Mở ảnh gốc
+        image = Image.open(file_location)
+        # Lật ảnh theo chiều ngang
+        flipped_image = image.transpose(Image.FLIP_LEFT_RIGHT)
+
+        # Kiểm tra chế độ màu và chuyển đổi sang RGB nếu cần
+        if flipped_image.mode == 'RGBA':
+            flipped_image = flipped_image.convert('RGB')
+
+        # Lưu ảnh lật
+        flipped_image_location = f"{directory}/{timestamp}_flipped_{file.filename}"
+        flipped_image.save(flipped_image_location, format='JPEG')  # Đảm bảo lưu dưới định dạng JPEG
+
+        # Tính toán vector cho ảnh lật
+        flipped_vector = await calculate_vector(flipped_image_location)
+
+        # Chuyển vector lật thành JSON string
+        flipped_vector_json = json.dumps(flipped_vector.tolist())
+
+        # Lưu ảnh lật và vector vào cơ sở dữ liệu
+        new_flipped_image = models.PhuHuynh_Images(id_ph=id_ph, image_path=flipped_image_location,
+                                                   vector=flipped_vector_json)
+        db.add(new_flipped_image)
+
+    except Exception as e:
+        raise Exception(f"Không thể xử lý ảnh lật: {str(e)}")
+
+    # Commit các bản ghi vào cơ sở dữ liệu
     try:
         db.commit()
         db.refresh(new_image)
+        db.refresh(new_flipped_image)
     except Exception as e:
         db.rollback()
         raise Exception(f"Không thể thêm hình ảnh vào cơ sở dữ liệu: {str(e)}")
 
-    return new_image
+    return new_image, new_flipped_image
 
 
 async def remove_parent_image(db: Session, id_image: int):
+    # Truy vấn ảnh gốc
     image_record = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_image == id_image).first()
 
     if not image_record:
         raise HTTPException(status_code=404, detail="Không tìm thấy ảnh trong cơ sở dữ liệu")
 
+    # Xóa ảnh gốc
     if not os.path.exists(image_record.image_path):
-        raise HTTPException(status_code=404, detail="Tệp ảnh không tồn tại trên hệ thống")
+        raise HTTPException(status_code=404, detail="Tệp ảnh gốc không tồn tại trên hệ thống")
 
     try:
         os.remove(image_record.image_path)
+        print(f"Đã xóa ảnh gốc: {image_record.image_path}")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Không thể xóa tệp ảnh: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Không thể xóa tệp ảnh gốc: {str(e)}")
 
+    # Truy vấn ảnh lật dựa trên id_image
+    flipped_image_record = db.query(models.PhuHuynh_Images).filter(
+        models.PhuHuynh_Images.id_image == id_image + 1).first()
+
+    # Nếu ảnh lật tồn tại, xóa ảnh lật
+    if flipped_image_record:
+        if not os.path.exists(flipped_image_record.image_path):
+            raise HTTPException(status_code=404, detail="Tệp ảnh lật không tồn tại trên hệ thống")
+
+        try:
+            os.remove(flipped_image_record.image_path)
+            print(f"Đã xóa ảnh lật: {flipped_image_record.image_path}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Không thể xóa tệp ảnh lật: {str(e)}")
+
+        # Xóa bản ghi ảnh lật trong cơ sở dữ liệu
+        db.delete(flipped_image_record)
+
+    # Xóa ảnh gốc trong cơ sở dữ liệu
     db.delete(image_record)
 
+    # Commit các thay đổi vào cơ sở dữ liệu
     try:
         db.commit()
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Không thể xóa ảnh trong cơ sở dữ liệu: {str(e)}")
 
-    return {"detail": "Ảnh đã được xóa thành công"}
+    return {"detail": "Cả ảnh gốc và ảnh lật đã được xóa thành công"}
 
 
 def get_all_images_for_parent(db: Session, id_ph: int):
     try:
-        images = db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == id_ph).all()
+        # Truy vấn tất cả ảnh nhưng loại trừ ảnh lật (bằng cách kiểm tra tên tệp)
+        images = db.query(models.PhuHuynh_Images).filter(
+            models.PhuHuynh_Images.id_ph == id_ph,
+            models.PhuHuynh_Images.image_path.notlike("%_flipped%")  # Loại trừ ảnh có "_flipped" trong tên
+        ).all()
+
         if not images:
             raise HTTPException(status_code=404, detail="Không tìm thấy ảnh nào cho phụ huynh này")
 
@@ -1043,6 +1105,7 @@ def get_all_images_for_parent(db: Session, id_ph: int):
             if isinstance(image.vector, str):
                 # Chuyển đổi chuỗi JSON thành danh sách
                 image.vector = json.loads(image.vector) if image.vector else []
+
             # Tạo URL cho ảnh
             image.image_path = f"http://localhost:8000/{image.image_path}"
 
@@ -1063,7 +1126,7 @@ async def get_vectors_by_student_id(db: Session, id_hs: int):
             vectors.append({
                 "id_ph": parent.id_ph,
                 "image_path": image.image_path,
-                "vector": image.vector  # Vector sẽ là một danh sách
+                "vector": image.vector
             })
 
     return vectors

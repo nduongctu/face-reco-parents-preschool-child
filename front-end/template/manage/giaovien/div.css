@@ -139,7 +139,7 @@ header h1 {
     border: 1px solid #ccc; /* Thêm đường viền cho phần kết quả */
     border-radius: 5px; /* Bo góc cho phần kết quả */
     background-color: #f9f9f9; /* Màu nền cho phần kết quả */
-    overflow: hidden; /* Ẩn các phần tử tràn ra ngoài */
+    overflow: auto; /* Ẩn các phần tử tràn ra ngoài */
 }
 
 .date-search-container {
