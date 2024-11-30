@@ -222,12 +222,12 @@ def update_parent_endpoint(
     return crud.update_parent(db, parent_id, parent)
 
 
-#
-#
-# @router.delete("/parents/{parent_id}", response_model=dict)
-# def delete_parent(parent_id: int, db: Session = Depends(get_db)):
-#     crud.delete_parent(db, parent_id)
-#     return {"detail": "Xóa phụ huynh thành công"}
+@router.delete("/parents/{parent_id}", response_model=dict)
+def delete_parent(parent_id: int, db: Session = Depends(get_db)):
+    crud.delete_parent(db, parent_id)
+    return {"detail": "Xóa phụ huynh thành công"}
+
+
 #
 #
 # # Các route API tài khoản

@@ -120,7 +120,7 @@ function redirectToEditPage(id) {
 // Hàm xác nhận xóa phụ huynh
 function confirmDeleteParent(id) {
     const popupOverlay = document.getElementById('popup-overlay');
-    popupOverlay.style.display = 'block';
+    popupOverlay.style.display = 'flex';
 
     document.getElementById('confirm-delete').onclick = async () => {
         await deleteParent(id);

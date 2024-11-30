@@ -820,10 +820,20 @@ def create_parent(db: Session, parent: schemas.PhuHuynhCreate):
     return new_parent
 
 
-def delete_parent(db: Session, parent_id: int):
-    db_parent = get_parent_by_id(db, parent_id)
-    db.delete(db_parent)
+def delete_parent(db: Session, id_ph: int):
+    db_ph = db.query(models.PhuHuynh).filter(models.PhuHuynh.id_ph == id_ph).first()
+    if not db_ph:
+        return {"error": "Phụ huynh không tồn tại!"}
+
+    db.query(models.DiemDanh).filter(models.DiemDanh.id_ph_don == id_ph).delete()
+    db.query(models.PhuHuynh_HocSinh).filter(models.PhuHuynh_HocSinh.id_ph == id_ph).delete()
+    db.query(models.PhuHuynh_Images).filter(models.PhuHuynh_Images.id_ph == id_ph).delete()
+
+    db.delete(db_ph)
+
     db.commit()
+
+    return {"message": "Xóa phụ huynh thành công!"}
 
 
 # =======================
@@ -1094,7 +1104,7 @@ def get_all_images_for_parent(db: Session, id_ph: int):
         # Truy vấn tất cả ảnh nhưng loại trừ ảnh lật (bằng cách kiểm tra tên tệp)
         images = db.query(models.PhuHuynh_Images).filter(
             models.PhuHuynh_Images.id_ph == id_ph,
-            models.PhuHuynh_Images.image_path.notlike("%_flipped%")  # Loại trừ ảnh có "_flipped" trong tên
+            models.PhuHuynh_Images.image_path.notlike("%_flipped%")
         ).all()
 
         if not images:
