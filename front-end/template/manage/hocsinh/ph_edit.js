@@ -1,6 +1,14 @@
 document.addEventListener('DOMContentLoaded', async function () {
     const token = localStorage.getItem('access_token');
     const parentId = getParentIdFromURL();
+    const uploadPictureButton = document.getElementById('upload-picture-button');
+    const imageOptionsModal = document.getElementById('image-options-modal');
+    const closeModalButton = document.getElementById('close-modal-button');
+    const uploadExistingButton = document.getElementById('upload-existing-button');
+    const capturePhotoButton = document.getElementById('capture-photo-button');
+    const captureButton = document.getElementById('capture-button');
+    const cancelButton = document.getElementById('cancel-button');
+    const cameraPreview = document.getElementById('camera-preview');
 
     if (!token) {
         alert('Token không tồn tại! Vui lòng đăng nhập lại.');
@@ -19,13 +27,43 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     await fetchAndDisplayAllImages(parentId);
+
+    uploadPictureButton.addEventListener("click", function () {
+        imageOptionsModal.style.display = "block"; // Hiển thị modal
+    });
+
+    closeModalButton.addEventListener("click", function () {
+        imageOptionsModal.style.display = "none"; // Ẩn modal
+    });
+
+    uploadExistingButton.addEventListener("click", function () {
+        document.getElementById("file-input").click(); // Mở file input
+        imageOptionsModal.style.display = "none"; // Ẩn modal
+    });
+
+    captureButton.addEventListener("click", function () {
+        captureImage(); // Chụp ảnh và mở modal cắt ảnh
+    });
+
+    cancelButton.addEventListener("click", function () {
+        stopCamera(); // Dừng camera
+        cameraPreview.style.display = 'none'; // Ẩn camera preview
+        imageOptionsModal.style.display = "none"; // Đóng modal
+    });
+
+    capturePhotoButton.addEventListener("click", function () {
+        startCamera(); // Bật camera
+        imageOptionsModal.style.display = "none"; // Ẩn modal
+    });
 });
 
+// Lấy ID phụ huynh từ URL
 function getParentIdFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id');
 }
 
+// Lấy thông tin phụ huynh từ API
 async function fetchParentData(parentId, token) {
     try {
         const response = await fetch(`http://localhost:8000/admin/parents/${parentId}`, {
@@ -49,6 +87,7 @@ async function fetchParentData(parentId, token) {
     }
 }
 
+// Điền thông tin vào form
 function populateParentForm(parent) {
     const safeSetValue = (id, value) => {
         const element = document.getElementById(id);
@@ -63,6 +102,7 @@ function populateParentForm(parent) {
     safeSetValue('quanhe', parent.quanhe);
 }
 
+// Cập nhật thông tin phụ huynh
 async function updateParentInfo(parentId, token) {
     const safeGetValue = (id) => {
         const element = document.getElementById(id);
@@ -107,10 +147,12 @@ async function updateParentInfo(parentId, token) {
     }
 }
 
+// Chuyển hướng về trang đăng nhập nếu không có token
 function redirectToLogin() {
     window.location.href = '../../auth/login.html';
 }
 
+// Lấy và hiển thị ảnh đã tải lên
 async function fetchAndDisplayAllImages(parentId) {
     try {
         const response = await fetch(`http://localhost:8000/admin/images/phu-huynh/${parentId}/`);
@@ -131,37 +173,108 @@ async function fetchAndDisplayAllImages(parentId) {
     }
 }
 
-document.getElementById("upload-picture-button").addEventListener("click", () => {
-    document.getElementById("file-input").click();
+// Mở camera để chụp ảnh
+function startCamera() {
+    const video = document.getElementById('video');
+    const cameraPreview = document.getElementById('camera-preview');
+    cameraPreview.style.display = 'block'; // Hiển thị preview camera
+
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video: true})
+            .then(function (stream) {
+                video.srcObject = stream;
+            })
+            .catch(function (error) {
+                alert('Không thể truy cập vào camera của bạn.');
+            });
+    }
+}
+
+// Dừng camera khi hủy
+function stopCamera() {
+    const video = document.getElementById('video');
+    const cameraPreview = document.getElementById('camera-preview');
+    cameraPreview.style.display = 'none'; // Ẩn camera preview
+
+    if (video.srcObject) {
+        const stream = video.srcObject;
+        const tracks = stream.getTracks();
+
+        tracks.forEach(track => track.stop()); // Dừng tất cả các track của camera
+    }
+}
+
+document.getElementById("capture-button").addEventListener("click", async function () {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+
+    // Vẽ khung hình video lên canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Lấy ảnh từ canvas và hiển thị trong modal cắt ảnh
+    const imageSrc = canvas.toDataURL('image/jpeg');
+
+    // Mở modal cắt ảnh và truyền ảnh vào
+    openCropModal(imageSrc);
 });
 
 let cropper;
-
-function openCropModal(imageSrc) {
-    const cropModal = document.getElementById("crop-modal");
-    const imageElement = document.getElementById("image-to-crop");
-
-    imageElement.src = imageSrc;  // Cập nhật nguồn ảnh
-    cropModal.style.display = "block";  // Hiển thị modal
-
-    // Tạo cropper cho ảnh
-    cropper = new Cropper(imageElement, {
-        aspectRatio: 1,  // Tỷ lệ cắt vuông
-        viewMode: 1,     // Chế độ xem ảnh
-    });
-}
-
 document.getElementById("file-input").addEventListener("change", function () {
     const file = this.files[0];
     if (file) {
         const reader = new FileReader();
         reader.onload = function (event) {
-            openCropModal(event.target.result);  // Mở modal với ảnh đã chọn
+            openCropModal(event.target.result);
         };
         reader.readAsDataURL(file);
     }
 });
 
+function captureImage() {
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const context = canvas.getContext('2d');
+    const cameraPreview = document.getElementById('camera-preview'); // Modal chụp ảnh
+
+    // Vẽ khung hình video lên canvas
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // Lấy ảnh từ canvas
+    const imageSrc = canvas.toDataURL('image/jpeg');
+
+    // Ẩn modal chụp ảnh tạm thời
+    cameraPreview.style.display = 'none';
+
+    // Mở modal crop ảnh
+    openCropModal(imageSrc);
+}
+
+function openCropModal(imageSrc) {
+    const cropModal = document.getElementById("crop-modal");
+    const imageElement = document.getElementById("image-to-crop");
+
+    // Hủy cropper cũ nếu có
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+
+    imageElement.src = imageSrc;
+
+    cropModal.style.display = "block";  // Mở modal
+
+    cropper = new Cropper(imageElement, {
+        aspectRatio: 1,
+        viewMode: 1,
+    });
+}
+
+// Cắt ảnh và tải lên
 document.getElementById("crop-button").addEventListener("click", async function () {
     const parentId = getParentIdFromURL();
     const croppedCanvas = cropper.getCroppedCanvas({
@@ -199,15 +312,19 @@ document.getElementById("crop-button").addEventListener("click", async function 
     });
 });
 
+// Đóng modal cắt ảnh
 function closeCropModal() {
     const cropModal = document.getElementById("crop-modal");
     cropModal.style.display = "none";  // Ẩn modal khi đóng
+
+    // Hủy cropper khi đóng modal
     if (cropper) {
-        cropper.destroy();  // Hủy cropper khi đóng modal
+        cropper.destroy();
         cropper = null;
     }
 }
 
+// Xóa ảnh
 document.getElementById("close-crop-modal").addEventListener("click", closeCropModal);
 
 function displayUploadedPictures(images) {

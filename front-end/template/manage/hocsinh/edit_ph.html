@@ -42,7 +42,7 @@
     <div class="content">
         <div class="profile-pictures-section">
             <form id="upload-profile-pictures-form" enctype="multipart/form-data">
-                <button type="button" class="btn-upload-picture" id="upload-picture-button">Thêm ảnh đại diện</button>
+                <button type="button" class="btn-upload-picture" id="upload-picture-button">Thêm ảnh phụ huynh</button>
                 <input type="file" name="pictures" accept="image/*" hidden id="file-input">
             </form>
             <div class="uploaded-pictures" id="uploaded-pictures">
@@ -97,7 +97,15 @@
     </div>
 </div>
 
-<!-- Modal for cropping image -->
+<div id="image-options-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h3>Chọn cách thêm ảnh</h3>
+        <button id="upload-existing-button">Tải ảnh có sẵn</button>
+        <button id="capture-photo-button">Chụp ảnh</button>
+        <button id="close-modal-button" class="close-modal-button">Đóng</button>
+    </div>
+</div>
+
 <div id="crop-modal" style="display: none;">
     <div class="modal-content">
         <span id="close-crop-modal" style="cursor: pointer;">&times;</span>
@@ -107,6 +115,13 @@
         </div>
         <button id="crop-button">Xác Nhận</button>
     </div>
+</div>
+
+<div id="camera-preview" style="display: none;">
+    <video id="video" width="300" height="300" autoplay></video>
+    <button id="cancel-button">Hủy</button>
+    <button id="capture-button">Chụp ảnh</button>
+    <canvas id="canvas" style="display: none;"></canvas>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.12/cropper.min.js"></script>

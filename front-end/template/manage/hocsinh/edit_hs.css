@@ -127,37 +127,3 @@ input, select, textarea {
     font-size: 16px; /* Kích thước biểu tượng */
     margin-right: 5px; /* Khoảng cách giữa biểu tượng và chữ */
 }
-
-#crop-modal {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Căn giữa modal */
-    background-color: rgba(188, 179, 179, 0.8);
-    width: 70%;
-    max-width: 600px;
-    padding: 20px;
-    border-radius: 10px;
-    z-index: 9999;
-}
-
-.modal-content {
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    position: relative;
-    display: flex;
-    flex-direction: column; /* Xếp theo chiều dọc */
-    align-items: center; /* Căn giữa theo chiều ngang */
-    justify-content: center; /* Căn giữa theo chiều dọc */
-}
-
-#close-crop-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 24px;
-    cursor: pointer;
-    color: #333;
-}
