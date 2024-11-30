@@ -1,0 +1,45 @@
+.uploaded-pictures {
+    display: flex;
+    gap: 10px; /* Khoảng cách giữa các ảnh */
+    flex-wrap: wrap;
+}
+
+.image-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.image-wrapper img {
+    width: 150px; /* Đặt kích thước mới cho ảnh */
+    height: 150px; /* Đặt chiều cao mới cho ảnh */
+    object-fit: cover; /* Cắt ảnh cho vừa với khung */
+    border-radius: 8px; /* Bo tròn góc ảnh */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Đổ bóng cho ảnh */
+    transition: transform 0.3s; /* Thêm hiệu ứng chuyển tiếp khi di chuột */
+}
+
+.image-wrapper:hover img {
+    transform: scale(1.05); /* Phóng to ảnh một chút khi di chuột vào */
+}
+
+.delete-button {
+    position: absolute;
+    top: 50%; /* Đặt nút xóa ở giữa theo chiều dọc */
+    left: 50%; /* Đặt nút xóa ở giữa theo chiều ngang */
+    transform: translate(-50%, -50%); /* Dịch chuyển nút xóa về giữa */
+    background: none; /* Không có nền */
+    border: none; /* Không có đường viền */
+    cursor: pointer; /* Hiển thị con trỏ tay khi di chuột */
+    padding: 0; /* Không có padding */
+    display: none; /* Ẩn nút xóa mặc định */
+}
+
+.image-wrapper:hover .delete-button {
+    display: block; /* Hiển thị nút xóa khi di chuột vào ảnh */
+}
+
+.delete-button img {
+    width: 50px; /* Kích thước hình ảnh icon xóa */
+    height: 50px; /* Kích thước hình ảnh icon xóa */
+}
+
