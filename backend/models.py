@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date, JSON, Time, Text
 from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 from config import settings
-
+import numpy as np
+import json
 # Tạo engine để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -122,6 +123,11 @@ class PhuHuynh_Images(Base):
 
     # Quan hệ với bảng PhuHuynh
     phu_huynh = relationship("PhuHuynh", back_populates="images")
+
+    def get_embedding(self):
+        if not self.vector:
+            raise ValueError(f"Vector for image {self.id_image} is empty or None.")
+        return np.array(json.loads(self.vector))  # Chuyển chuỗi JSON thành mảng numpy
 
 
 # Mô hình GiaoVien_Images

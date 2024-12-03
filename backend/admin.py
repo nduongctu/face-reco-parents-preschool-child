@@ -19,6 +19,8 @@ from sklearn.metrics.pairwise import euclidean_distances
 from collections import Counter
 import numpy as np
 from fastapi.responses import JSONResponse
+import matplotlib.pyplot as plt
+from fastapi.responses import StreamingResponse
 
 # Tạo engine và session để kết nối với cơ sở dữ liệu
 engine = create_engine(settings.DATABASE_URL)
@@ -623,3 +625,46 @@ async def get_diem_danh_api(
 
     except ValueError:
         raise HTTPException(status_code=400, detail="Ngày không đúng định dạng. Định dạng đúng là YYYY-MM-DD.")
+
+
+@router.get("/calculate-all-distances")
+async def calculate_all_distances(db: Session = Depends(get_db)):
+    # Lấy tất cả dữ liệu từ bảng PhuHuynh_Images
+    all_images = db.query(models.PhuHuynh_Images).all()
+
+    distances_same = []  # Khoảng cách Euclid cho cặp ảnh cùng người
+    distances_diff = []  # Khoảng cách Euclid cho cặp ảnh khác người
+
+    # Tính khoảng cách Euclid cho tất cả cặp ảnh (cùng người và khác người)
+    for img1 in all_images:
+        embedding1 = img1.get_embedding()  # Gọi phương thức get_embedding để lấy embedding của ảnh 1
+        if embedding1 is None:
+            continue
+        # Cặp ảnh cùng người
+        for img2 in all_images:
+            embedding2 = img2.get_embedding()  # Gọi phương thức get_embedding để lấy embedding của ảnh 2
+            if embedding2 is None:
+                continue
+            # Nếu là ảnh của cùng một phụ huynh, tính khoảng cách
+            if img1.id_ph == img2.id_ph:  # Cùng id_ph (cùng người)
+                dist = np.linalg.norm(embedding1 - embedding2)
+                distances_same.append(dist)
+            # Nếu là ảnh của phụ huynh khác, tính khoảng cách
+            else:
+                dist = np.linalg.norm(embedding1 - embedding2)
+                distances_diff.append(dist)
+
+    # Vẽ biểu đồ phân phối khoảng cách Euclid
+    fig, ax = plt.subplots()
+    ax.hist(distances_same, bins=30, alpha=0.5, label='Cùng người')
+    ax.hist(distances_diff, bins=30, alpha=0.5, label='Khác người')
+    ax.legend(loc='upper right')
+    ax.set_title('Phân phối Khoảng cách Euclid')
+
+    # Lưu biểu đồ vào bộ nhớ và trả về dưới dạng hình ảnh
+    img_stream = BytesIO()
+    plt.savefig(img_stream, format='png')
+    img_stream.seek(0)
+
+    # Trả về hình ảnh như một phản hồi HTTP
+    return StreamingResponse(img_stream, media_type="image/png")
