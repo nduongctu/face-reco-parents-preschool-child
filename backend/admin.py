@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Body
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Body, Form
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, Time
 from sqlalchemy.orm import sessionmaker
@@ -283,8 +283,8 @@ def update_account_by_username(username: str, account_data: schemas.TaiKhoanUpda
     return schemas.TaiKhoanResponse.from_orm(db_account)
 
 
-@router.post("/images/giao-vien/")
-async def upload_teacher_image(id_gv: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
+@router.put("/images/giao-vien/")
+async def upload_teacher_image(id_gv: int = Form(...), file: UploadFile = File(...), db: Session = Depends(get_db)):
     return await crud.upload_teacher_image(db, id_gv, file)
 
 

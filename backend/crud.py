@@ -904,31 +904,29 @@ async def upload_teacher_image(db: Session, id_gv: int, file: UploadFile):
     directory = "images/giao_vien"
     os.makedirs(directory, exist_ok=True)
 
+    # Tạo tên file mới với timestamp để đảm bảo không trùng
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
     file_location = f"{directory}/{timestamp}_{file.filename}"
 
     try:
+        # Lưu file lên server
         with open(file_location, "wb") as f:
             f.write(await file.read())
     except Exception as e:
         raise Exception(f"Không thể lưu hình ảnh: {str(e)}")
 
-    new_image = models.GiaoVien_Images(id_gv=id_gv, image_path=file_location)
-    db.add(new_image)
-    db.commit()
-    db.refresh(new_image)
-    return new_image
-
-
-async def update_teacher_image(db: Session, id_gv: int, image_path: str):
+    # Cập nhật hoặc thêm mới ảnh vào database
     teacher_image = db.query(models.GiaoVienImages).filter(models.GiaoVienImages.id_gv == id_gv).first()
 
-    if not teacher_image:
-        # Nếu không có hình ảnh, thêm mới
-        teacher_image = models.GiaoVienImages(id_gv=id_gv, image_path=image_path)
-        db.add(teacher_image)
+    if teacher_image:
+        # Nếu đã có ảnh, xóa file ảnh cũ
+        if os.path.exists(teacher_image.image_path):
+            os.remove(teacher_image.image_path)
+        teacher_image.image_path = file_location  # Cập nhật đường dẫn ảnh mới
     else:
-        teacher_image.image_path = image_path
+        # Nếu chưa có ảnh, thêm mới
+        teacher_image = models.GiaoVienImages(id_gv=id_gv, image_path=file_location)
+        db.add(teacher_image)
 
     try:
         db.commit()

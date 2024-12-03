@@ -239,10 +239,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             formData.append("id_gv", teacherId); // Thêm id_gv vào FormData
 
             try {
-                const response = await fetch(`http://localhost:8000/admin/images/giao-vien/${teacherId}/`, {
+                const response = await fetch(`http://localhost:8000/admin/images/giao-vien/`, {
                     method: "PUT",
                     headers: {
-                        'Authorization': `Bearer ${token}` // Thêm token nếu cần
+                        'Authorization': `Bearer ${token}`
                     },
                     body: formData,
                 });

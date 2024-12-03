@@ -14,7 +14,7 @@
     height: 150px; /* Đặt chiều cao mới cho ảnh */
     object-fit: cover; /* Cắt ảnh cho vừa với khung */
     border-radius: 8px; /* Bo tròn góc ảnh */
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Đổ bóng cho ảnh */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Đổ bóng cho ảnh */
     transition: transform 0.3s; /* Thêm hiệu ứng chuyển tiếp khi di chuột */
 }
 
