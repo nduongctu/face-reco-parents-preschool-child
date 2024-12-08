@@ -5,6 +5,7 @@ from backend.config import settings
 from backend.login import router as auth_router
 from backend.admin import router as admin_router
 from backend.middleware import TokenExpiryMiddleware
+from deepface import DeepFace
 
 app = FastAPI()
 
@@ -32,7 +33,21 @@ def get_db():
         db.close()
 
 
+def warmup_deepface_model():
+    print("Warming up DeepFace model...")
+    dummy_image = "temp_image.jpg"  # Sử dụng một ảnh dummy có sẵn
+    DeepFace.represent(img_path=dummy_image, model_name="Facenet", enforce_detection=False)
+    print("DeepFace model is warmed up and ready!")
+
+
+@app.on_event("startup")
+async def on_startup():
+    warmup_deepface_model()
+
+
 if __name__ == "__main__":
     import uvicorn
+
+    warmup_deepface_model()
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
